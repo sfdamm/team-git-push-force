@@ -55,3 +55,61 @@ This diagram illustrates the main interactions between users and the system.
 This diagram provides a high-level overview of the system’s components and their interactions.
 
 ![Top-Level Architecture](./docs/uml/AI_Event_Concepter_UML_Component_Diagram.drawio.svg)
+
+## Prerequisites
+
+- Node.js (v22 or later)
+- Java JDK 21+
+- Gradle
+- Docker and Docker Compose
+- Git
+
+## Setup Instructions
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/AET-DevOps25/team-git-push-force.git
+cd team-git-push-force
+```
+
+### Client Setup
+
+1. Navigate to the `client` directory:
+   ```bash
+   cd client
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Server Setup
+
+1. Navigate to the `server` directory:
+   ```bash
+   cd server
+   ```
+2. Build the project:
+   ```bash
+   ./gradlew build
+   ```
+
+## Running the Application
+
+### Start the Client
+
+```bash
+cd client
+npm run dev
+```
+The client will be available at [http://localhost:3000](http://localhost:3000).
+
+### Start the Server
+
+```bash
+cd server
+./gradlew bootRun
+```
+The server API will be available at [http://localhost:8080](http://localhost:8080).
+
