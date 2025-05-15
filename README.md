@@ -29,3 +29,29 @@ An interactive **co-creation assistant** that turns a vague event idea into a po
 **Compliance-aware brainstorm** – A corporate planner supplies the company’s policy handbook and audience personas. The AI filters speaker suggestions to fit policy, proposes an online format for global reach, and crafts sponsor packages aligned with brand guidelines. When the planner asks, “Shorten it to a half-day and add a panel,” the AI updates the concept instantly.
 
 **Learning loop** – After an event, the planner uploads debrief notes (“need stronger networking, ticket price felt high”). Next time, the AI automatically proposes an interactive networking segment and adjusted ticket tiers, then asks, “Anything else you’d like to refine?”—keeping the focus on creative improvement instead of administrative grind.
+
+---
+
+## 📊 UML Diagrams
+
+### 1. Analysis Object Model (UML Class Diagram)
+
+This diagram shows the key objects and their relationships as identified during analysis.
+
+![Analysis Object Model](./docs/uml/AI_Event_Concepter_UML_Simple_Analysis_Object_Model.apollon.svg)
+
+---
+
+### 2. Use Case Diagram
+
+This diagram illustrates the main interactions between users and the system.
+
+![Use Case Diagram](./docs/uml/AI_Event_Concepter_UML_Use_Case_Diagram.drawio.svg)
+
+---
+
+### 3. Top-Level Architecture (UML Component Diagram)
+
+This diagram provides a high-level overview of the system’s components and their interactions.
+
+![Top-Level Architecture](./docs/uml/AI_Event_Concepter_UML_Component_Diagram.drawio.svg)
