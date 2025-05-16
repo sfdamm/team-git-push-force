@@ -32,6 +32,27 @@ An interactive **co-creation assistant** that turns a vague event idea into a po
 
 ---
 
+## 🏗 Architecture
+
+The system follows a modular microservice architecture with clearly separated concerns across backend services, a modern web frontend, and scalable data infrastructure.
+
+### 🔧 Component Overview
+
+| Layer         | Technology              | Purpose                                           |
+|---------------|--------------------------|---------------------------------------------------|
+| API Gateway   | Spring Boot 3            | JWT authentication, routing, OpenAPI docs         |
+| User Service  | Spring Boot 3            | User management, roles, preferences               |
+| Concept Service| Spring Boot 3           | CRUD for concepts, PDF rendering                  |
+| GenAI Service | Python 3.12 + LangChain  | Document ingestion, RAG pipeline, content creation|
+| Web Client    | Angular 19               | Chat UI, adaptive flow, PDF viewer                |
+| Relational DB | PostgreSQL               | Stores users, projects, concept metadata          |
+| Vector DB     | Weaviate                 | Embeddings for trends & document chunks           |
+| Object Store  | MinIO                    | Uploaded files and generated PDFs                 |
+| Observability | Prometheus + Grafana     | Metrics and dashboards                            |
+| Orchestration | Docker + Kubernetes      | Containerization and scalable deployment          |
+
+---
+
 ## 📊 UML Diagrams
 
 ### 1. Analysis Object Model (UML Class Diagram)
@@ -56,15 +77,30 @@ This diagram provides a high-level overview of the system’s components and the
 
 ![Top-Level Architecture](./docs/uml/AI_Event_Concepter_UML_Component_Diagram.drawio.svg)
 
-## Prerequisites
+---
 
-- Node.js (v22 or later)
+## 📁 Repository Structure
+
+The project is split into two main directories:
+
+- `/client`: Angular 19 frontend
+- `/server`: Spring Boot microservices (API Gateway, User Service, Concept Service)
+
+---
+
+## ⚙️ Prerequisites
+
+Make sure the following tools are installed:
+
+- [Node.js](https://nodejs.org/) (v22 or later)
 - Java JDK 21+
-- Gradle
+- [Gradle](https://gradle.org/)
 - Docker and Docker Compose
 - Git
 
-## Setup Instructions
+---
+
+## 🚀 Setup Instructions
 
 ### Clone the Repository
 
