@@ -1,18 +1,20 @@
-# Use a Node.js Alpine image for the builder stage
+# ---------- 1. BUILD STAGE ----------
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-RUN npm prune --production
 
-# Use another Node.js Alpine image for the final stage
-FROM node:22-alpine
-WORKDIR /app
-COPY --from=builder /app/build build/
-COPY --from=builder /app/node_modules node_modules/
-COPY package.json .
-EXPOSE 3000
-ENV NODE_ENV=production
-CMD [ "node", "build" ]
+# speed up rebuilds: first copy lock files only
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+
+# now copy sources and build for production
+COPY . .
+RUN npm run build -- --configuration=production
+
+# ---------- 2. RUNTIME STAGE ----------
+FROM nginx:1.27-alpine
+COPY --from=builder /app/dist/concepter/browser /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+HEALTHCHECK CMD wget -qO- http://localhost:80/ || exit 1
+CMD ["nginx","-g","daemon off;"]
