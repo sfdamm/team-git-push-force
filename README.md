@@ -133,7 +133,24 @@ cd team-git-push-force
 
 ## Running the Application
 
-### Start the Client
+### Option 1: Using Docker Compose (Recommended)
+
+The easiest way to run the entire application is using Docker Compose:
+
+```bash
+docker-compose up
+```
+
+This will start all services:
+- Client (Angular frontend) at [http://localhost:3000](http://localhost:3000)
+- Server (API Gateway) at [http://localhost:8080](http://localhost:8080)
+- User Service at [http://localhost:8081](http://localhost:8081)
+- Concept Service at [http://localhost:8082](http://localhost:8082)
+- GenAI Service at [http://localhost:8083](http://localhost:5000)
+
+### Option 2: Manual Startup
+
+#### Start the Client
 
 ```bash
 cd client
@@ -141,7 +158,7 @@ npm run dev
 ```
 The client will be available at [http://localhost:3000](http://localhost:3000).
 
-### Start the Server
+#### Start the Server
 
 ```bash
 cd server
@@ -149,3 +166,11 @@ cd server
 ```
 The server API will be available at [http://localhost:8080](http://localhost:8080).
 
+#### Start the GenAI Service
+
+```bash
+cd genai-svc
+pip install -r requirements.txt
+python app.py
+```
+The GenAI Service will be available at [http://localhost:8083](http://localhost:8083).
