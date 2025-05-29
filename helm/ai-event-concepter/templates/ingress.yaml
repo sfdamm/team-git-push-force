@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "ai-event-concepter-ingress"
+  {{- $annotations := .Values.ingress.annotations | default dict }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - "team-git-push-force.student.k8s.aet.cit.tum.de"
+      secretName: "ai-event-concepter-tls"
+  {{- end }}
+  rules:
+    - host: "team-git-push-force.student.k8s.aet.cit.tum.de"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client-service
+                port:
+                  number: {{ .Values.client.service.port }}
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: server-service
+                port:
+                  number: {{ .Values.server.service.port }}
+{{- end }}
