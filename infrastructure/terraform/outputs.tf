@@ -43,13 +43,14 @@ output "api_url" {
   value       = "https://api.${aws_eip.app_eip.public_ip}.nip.io/api"
 }
 
-output "ssh_private_key" {
-  description = "SSH private key for Ansible (save to file with 600 permissions)"
-  value       = tls_private_key.app_key.private_key_pem
-  sensitive   = true
-}
-
 output "ssh_public_key" {
   description = "SSH public key"
   value       = tls_private_key.app_key.public_key_openssh
+}
+
+# Alias for GitHub Actions workflow compatibility
+output "private_key" {
+  description = "SSH private key for Ansible (alias for ssh_private_key)"
+  value       = tls_private_key.app_key.private_key_pem
+  sensitive   = true
 }
