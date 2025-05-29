@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat/terraform
   pull_request:
     branches:
       - main
