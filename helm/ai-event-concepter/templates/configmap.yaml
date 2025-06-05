@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  api_url: https://team-git-push-force.student.k8s.aet.cit.tum.de/api
+  api_url: "https://team-git-push-force.student.k8s.aet.cit.tum.de/api"

@@ -18,6 +18,12 @@ server:
   env:
     - name: SPRING_PROFILES_ACTIVE
       value: docker
+    - name: USER_SERVICE_URL
+      value: http://user-service:8080
+    - name: CONCEPT_SERVICE_URL
+      value: http://concept-service:8080
+    - name: GENAI_SERVICE_URL
+      value: http://genai-service:8083
 
 client:
   image:
@@ -26,9 +32,51 @@ client:
     pullPolicy: Always
   service:
     type: ClusterIP
-    port: 3000
-    targetPort: 3000
+    port: 80
+    targetPort: 80
   replicaCount: 1
+
+usersvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/user-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  replicaCount: 1
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: docker
+
+conceptsvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/concept-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  replicaCount: 1
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: docker
+
+genaisvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/genai-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+  replicaCount: 1
+  env:
+    - name: FLASK_ENV
+      value: production
 
 ingress:
   enabled: true

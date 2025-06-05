@@ -12,6 +12,8 @@ spec:
       labels:
         app: ai-event-concepter-client-selector
     spec:
+      imagePullSecrets:
+        - name: ghcr
       containers:
         - name: client
           image: "{{ .Values.client.image.repository }}:{{ .Values.client.image.tag }}"
