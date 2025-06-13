@@ -41,6 +41,7 @@ jobs:
   terraform:
     name: Terraform ${{ github.event.inputs.terraform_action || 'plan' }}
     runs-on: ubuntu-latest
+    if: false  # Workflow disabled - TODO: Enable when ready
     environment: ${{ github.event.inputs.environment || 'staging' }}
     defaults:
       run:
