@@ -173,9 +173,6 @@ paths:
                 preferences:
                   type: object
                   properties:
-                    defaultEventCapacity:
-                      type: integer
-                      example: 500
                     preferredEventFormat:
                       type: string
                       enum: [PHYSICAL, VIRTUAL, HYBRID]
@@ -183,6 +180,12 @@ paths:
                     industry:
                       type: string
                       example: "Technology"
+                    language:
+                      type: string
+                      example: "en"
+                    timezone:
+                      type: string
+                      example: "Europe/Berlin"
       responses:
         '201':
           description: User registered successfully
@@ -635,13 +638,17 @@ components:
         preferences:
           type: object
           properties:
-            defaultEventCapacity:
-              type: integer
             preferredEventFormat:
               type: string
               enum: [PHYSICAL, VIRTUAL, HYBRID]
             industry:
               type: string
+            language:
+              type: string
+            timezone:
+              type: string
+        isActive:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -659,13 +666,17 @@ components:
         preferences:
           type: object
           properties:
-            defaultEventCapacity:
-              type: integer
             preferredEventFormat:
               type: string
               enum: [PHYSICAL, VIRTUAL, HYBRID]
             industry:
               type: string
+            language:
+              type: string
+            timezone:
+              type: string
+        isActive:
+          type: boolean
 
     Concept:
       type: object
@@ -694,6 +705,12 @@ components:
               type: string
             targetAudience:
               type: string
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
         agenda:
           type: array
           items:
@@ -708,6 +725,9 @@ components:
               type:
                 type: string
                 enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK]
+              duration:
+                type: integer
+                description: Duration in minutes
         speakers:
           type: array
           items:
@@ -715,33 +735,25 @@ components:
             properties:
               name:
                 type: string
-              title:
-                type: string
-              company:
-                type: string
               expertise:
                 type: string
-        sponsors:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
+              suggestedTopic:
                 type: string
-              tier:
-                type: string
-                enum: [PLATINUM, GOLD, SILVER, BRONZE]
-              contribution:
-                type: string
-        ticketPricing:
+        pricing:
           type: object
           properties:
+            currency:
+              type: string
+              default: "EUR"
             earlyBird:
               type: number
             regular:
               type: number
             vip:
               type: number
+        notes:
+          type: string
+          description: Additional notes or requirements
         createdAt:
           type: string
           format: date-time
@@ -776,19 +788,45 @@ components:
               enum: [PHYSICAL, VIRTUAL, HYBRID]
             budget:
               type: string
+            duration:
+              type: string
+              example: "1 day"
+            theme:
+              type: string
 
     ChatRequest:
       type: object
       required:
         - message
-        - conceptId
+        - concept
       properties:
         message:
           type: string
           example: "Can you suggest some keynote speakers for a tech innovation summit?"
-        conceptId:
-          type: string
-          format: uuid
+        concept:
+          type: object
+          description: The complete concept object for context
+          properties:
+            id:
+              type: string
+              format: uuid
+            title:
+              type: string
+            description:
+              type: string
+            status:
+              type: string
+              enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+            eventDetails:
+              type: object
+            agenda:
+              type: array
+              items:
+                type: object
+            speakers:
+              type: array
+              items:
+                type: object
         context:
           type: object
           properties:
@@ -842,14 +880,17 @@ components:
           type: string
         type:
           type: string
-          enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES]
-        processingStatus:
+          enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES, OTHER]
+        status:
           type: string
           enum: [PROCESSING, COMPLETED, FAILED]
-        extractedInsights:
-          type: array
-          items:
-            type: string
+        s3Location:
+          type: string
+          description: S3 bucket path where the document is stored
+          example: "s3://concepter-documents/user123/doc456.pdf"
+        uploadedAt:
+          type: string
+          format: date-time
         processedAt:
           type: string
           format: date-time

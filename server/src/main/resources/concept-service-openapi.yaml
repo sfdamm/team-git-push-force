@@ -292,18 +292,10 @@ paths:
                       type: array
                       items:
                         $ref: '#/components/schemas/Speaker'
-                    sponsors:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/Sponsor'
-                    ticketPricing:
-                      $ref: '#/components/schemas/TicketPricing'
-                    venue:
-                      $ref: '#/components/schemas/Venue'
-                    marketing:
-                      $ref: '#/components/schemas/MarketingDetails'
-                    budget:
-                      $ref: '#/components/schemas/Budget'
+                    pricing:
+                      $ref: '#/components/schemas/Pricing'
+                    notes:
+                      type: string
                 applyMode:
                   type: string
                   enum: [REPLACE, MERGE]
@@ -386,49 +378,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/concepts/{conceptId}/clone:
-    post:
-      summary: Clone concept
-      description: Create a copy of an existing concept
-      tags:
-        - Concept Management
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID to clone
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  example: "Copy of Tech Innovation Summit 2024"
-                includeDocuments:
-                  type: boolean
-                  default: false
-                  description: Whether to include uploaded documents
-      responses:
-        '201':
-          description: Concept cloned successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Concept'
-        '404':
-          description: Original concept not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/concepts/{conceptId}/pdf:
     get:
@@ -480,229 +430,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/concepts/{conceptId}/export:
-    get:
-      summary: Export concept data
-      description: Export concept in various formats (JSON, CSV, etc.)
-      tags:
-        - Export
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-        - name: format
-          in: query
-          description: Export format
-          schema:
-            type: string
-            enum: [JSON, CSV, EXCEL]
-            default: JSON
-      responses:
-        '200':
-          description: Concept exported successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Concept'
-            text/csv:
-              schema:
-                type: string
-                format: binary
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-              schema:
-                type: string
-                format: binary
-
-  /api/concepts/{conceptId}/versions:
-    get:
-      summary: Get concept versions
-      description: Retrieve version history of a concept
-      tags:
-        - Version Management
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Concept versions retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConceptVersion'
-
-  /api/concepts/{conceptId}/restore/{versionId}:
-    post:
-      summary: Restore concept version
-      description: Restore a concept to a previous version
-      tags:
-        - Version Management
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-        - name: versionId
-          in: path
-          required: true
-          description: Version ID to restore
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Concept restored successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Concept'
-        '404':
-          description: Concept or version not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/concepts/templates:
-    get:
-      summary: Get concept templates
-      description: Retrieve available concept templates
-      tags:
-        - Templates
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: category
-          in: query
-          description: Filter by template category
-          schema:
-            type: string
-            enum: [CONFERENCE, WORKSHOP, WEBINAR, TRADE_SHOW, NETWORKING]
-        - name: industry
-          in: query
-          description: Filter by industry
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Templates retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConceptTemplate'
-
-  /api/concepts/templates/{templateId}:
-    post:
-      summary: Create concept from template
-      description: Create a new concept based on a template
-      tags:
-        - Templates
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: templateId
-          in: path
-          required: true
-          description: Template ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-              properties:
-                title:
-                  type: string
-                customizations:
-                  type: object
-                  description: Template customizations
-      responses:
-        '201':
-          description: Concept created from template successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Concept'
-
-  /api/concepts/{conceptId}/share:
-    post:
-      summary: Share concept
-      description: Generate shareable link for concept
-      tags:
-        - Sharing
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                permissions:
-                  type: string
-                  enum: [VIEW, EDIT]
-                  default: VIEW
-                expiresAt:
-                  type: string
-                  format: date-time
-                  description: Link expiration date
-                password:
-                  type: string
-                  description: Optional password protection
-      responses:
-        '200':
-          description: Share link generated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  shareId:
-                    type: string
-                    format: uuid
-                  shareUrl:
-                    type: string
-                    format: uri
-                  permissions:
-                    type: string
-                  expiresAt:
-                    type: string
-                    format: date-time
 
 components:
   securitySchemes:
@@ -738,30 +465,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Speaker'
-        sponsors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sponsor'
-        ticketPricing:
-          $ref: '#/components/schemas/TicketPricing'
-        venue:
-          $ref: '#/components/schemas/Venue'
-        marketing:
-          $ref: '#/components/schemas/MarketingDetails'
-        budget:
-          $ref: '#/components/schemas/Budget'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+        notes:
+          type: string
+          description: Additional notes or requirements
         tags:
           type: array
           items:
             type: string
           example: ["technology", "innovation", "conference"]
-        aiGenerated:
-          type: boolean
-          description: Whether content was AI-generated
-          example: true
         version:
           type: integer
-          example: 3
+          example: 1
         createdAt:
           type: string
           format: date-time
@@ -845,7 +561,10 @@ components:
               format: date
             budget:
               type: string
-            location:
+            duration:
+              type: string
+              example: "1 day"
+            theme:
               type: string
         tags:
           type: array
@@ -872,18 +591,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Speaker'
-        sponsors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sponsor'
-        ticketPricing:
-          $ref: '#/components/schemas/TicketPricing'
-        venue:
-          $ref: '#/components/schemas/Venue'
-        marketing:
-          $ref: '#/components/schemas/MarketingDetails'
-        budget:
-          $ref: '#/components/schemas/Budget'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+        notes:
+          type: string
         tags:
           type: array
           items:
@@ -904,13 +615,13 @@ components:
           example: 500
         duration:
           type: string
-          example: "2 days"
+          example: "1 day"
         startDate:
           type: string
-          format: date-time
+          format: date
         endDate:
           type: string
-          format: date-time
+          format: date
         targetAudience:
           type: string
           example: "Technology professionals, entrepreneurs, and innovators"
@@ -919,11 +630,9 @@ components:
           items:
             type: string
           example: ["Showcase latest AI innovations", "Network with industry leaders"]
-        keyTopics:
-          type: array
-          items:
-            type: string
-          example: ["Machine Learning", "AI Ethics", "Future Technologies"]
+        location:
+          type: string
+          example: "Munich Convention Center"
 
     AgendaItem:
       type: object
@@ -945,16 +654,10 @@ components:
         speaker:
           type: string
           example: "Dr. Jane Smith"
-        location:
-          type: string
-          example: "Main Auditorium"
         duration:
           type: integer
           description: Duration in minutes
           example: 90
-        isBreakout:
-          type: boolean
-          default: false
 
     Speaker:
       type: object
@@ -965,266 +668,41 @@ components:
         name:
           type: string
           example: "Dr. Jane Smith"
-        title:
+        expertise:
           type: string
-          example: "Chief AI Officer"
-        company:
+          example: "Artificial Intelligence and Machine Learning"
+        suggestedTopic:
           type: string
-          example: "TechCorp Inc."
+          example: "Future of AI in Healthcare"
         bio:
           type: string
-        expertise:
-          type: array
-          items:
-            type: string
-          example: ["Artificial Intelligence", "Machine Learning", "Data Science"]
-        image:
-          type: string
-          format: uri
-        website:
-          type: string
-          format: uri
-        social:
-          type: object
-          properties:
-            linkedin:
-              type: string
-            twitter:
-              type: string
-        fee:
-          type: number
-          description: Speaker fee
         confirmed:
           type: boolean
           default: false
 
-    Sponsor:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: "TechCorp Inc."
-        tier:
-          type: string
-          enum: [PLATINUM, GOLD, SILVER, BRONZE, PARTNER]
-          example: "GOLD"
-        contribution:
-          type: number
-          description: Sponsorship amount
-        benefits:
-          type: array
-          items:
-            type: string
-          example: ["Logo on materials", "Exhibition booth", "Speaking slot"]
-        logo:
-          type: string
-          format: uri
-        website:
-          type: string
-          format: uri
-        contact:
-          type: object
-          properties:
-            name:
-              type: string
-            email:
-              type: string
-              format: email
-            phone:
-              type: string
-        confirmed:
-          type: boolean
-          default: false
-
-    TicketPricing:
+    Pricing:
       type: object
       properties:
         currency:
           type: string
           example: "EUR"
-        tiers:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: "Early Bird"
-              price:
-                type: number
-                example: 299.99
-              description:
-                type: string
-              availableUntil:
-                type: string
-                format: date
-              quantity:
-                type: integer
-                description: Number of tickets available
-              benefits:
-                type: array
-                items:
-                  type: string
-        discounts:
-          type: array
-          items:
-            type: object
-            properties:
-              type:
-                type: string
-                enum: [STUDENT, GROUP, EARLY_BIRD, CORPORATE]
-              percentage:
-                type: number
-              description:
-                type: string
-
-    Venue:
-      type: object
-      properties:
-        name:
-          type: string
-          example: "Convention Center Munich"
-        address:
-          type: object
-          properties:
-            street:
-              type: string
-            city:
-              type: string
-            state:
-              type: string
-            country:
-              type: string
-            postalCode:
-              type: string
-        capacity:
-          type: integer
-        facilities:
-          type: array
-          items:
-            type: string
-          example: ["Wi-Fi", "A/V Equipment", "Catering Kitchen"]
-        accessibility:
-          type: array
-          items:
-            type: string
-        cost:
+          default: "EUR"
+        earlyBird:
           type: number
-        contact:
-          type: object
-          properties:
-            name:
-              type: string
-            email:
-              type: string
-            phone:
-              type: string
-
-    MarketingDetails:
-      type: object
-      properties:
-        websiteUrl:
-          type: string
-          format: uri
-        registrationUrl:
-          type: string
-          format: uri
-        socialMediaHandles:
-          type: object
-          properties:
-            twitter:
-              type: string
-            linkedin:
-              type: string
-            facebook:
-              type: string
-        hashtags:
-          type: array
-          items:
-            type: string
-          example: ["#TechSummit2024", "#AI", "#Innovation"]
-        pressRelease:
-          type: string
-        mediaKit:
-          type: string
-          format: uri
-
-    Budget:
-      type: object
-      properties:
-        totalBudget:
+          example: 199.99
+        regular:
           type: number
-        currency:
-          type: string
-          example: "EUR"
-        breakdown:
-          type: object
-          properties:
-            venue:
-              type: number
-            catering:
-              type: number
-            speakers:
-              type: number
-            marketing:
-              type: number
-            technology:
-              type: number
-            staffing:
-              type: number
-            miscellaneous:
-              type: number
-        revenue:
-          type: object
-          properties:
-            ticketSales:
-              type: number
-            sponsorships:
-              type: number
-            other:
-              type: number
-
-    ConceptVersion:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        version:
-          type: integer
-        title:
-          type: string
-        changes:
-          type: string
-          description: Summary of changes in this version
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-          format: uuid
-
-    ConceptTemplate:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: "Technology Conference Template"
-        description:
-          type: string
-        category:
-          type: string
-          enum: [CONFERENCE, WORKSHOP, WEBINAR, TRADE_SHOW, NETWORKING]
-        industry:
-          type: string
-        template:
-          $ref: '#/components/schemas/Concept'
+          example: 299.99
+        vip:
+          type: number
+          example: 499.99
+        student:
+          type: number
+          example: 99.99
+        group:
+          type: number
+          description: Price per person for group bookings (5+)
+          example: 249.99
 
     Pageable:
       type: object
@@ -1271,12 +749,4 @@ tags:
   - name: Concept Management
     description: CRUD operations for event concepts
   - name: PDF Export
-    description: PDF generation and export
-  - name: Export
-    description: Data export in various formats
-  - name: Version Management
-    description: Concept versioning and history
-  - name: Templates
-    description: Concept templates management
-  - name: Sharing
-    description: Concept sharing and collaboration 
+    description: PDF generation and export 

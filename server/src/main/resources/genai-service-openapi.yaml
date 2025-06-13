@@ -159,28 +159,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/chat/stream:
-    post:
-      summary: Stream chat response
-      description: Get streaming response from AI assistant
-      tags:
-        - Chat Interface
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChatRequest'
-      responses:
-        '200':
-          description: Streaming response
-          content:
-            text/event-stream:
-              schema:
-                type: string
-                description: Server-sent events with streaming AI response
+
 
   /api/documents:
     post:
@@ -220,12 +199,6 @@ paths:
                     extractImages:
                       type: boolean
                       default: false
-                    generateSummary:
-                      type: boolean
-                      default: true
-                    extractKeyInsights:
-                      type: boolean
-                      default: true
       responses:
         '200':
           description: Documents uploaded and processing started
@@ -250,35 +223,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/documents/{documentId}/status:
-    get:
-      summary: Get document processing status
-      description: Check the processing status of an uploaded document
-      tags:
-        - Document Processing
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: documentId
-          in: path
-          required: true
-          description: Document ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Document status retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentStatus'
-        '404':
-          description: Document not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/documents/{conceptId}:
     get:
@@ -350,238 +295,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/generate/concept:
-    post:
-      summary: Generate event concept
-      description: Generate a complete event concept based on input requirements and uploaded documents
-      tags:
-        - Content Generation
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConceptGenerationRequest'
-      responses:
-        '200':
-          description: Concept generated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneratedConcept'
-        '400':
-          description: Invalid request parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/generate/agenda:
-    post:
-      summary: Generate event agenda
-      description: Generate a detailed event agenda based on concept details
-      tags:
-        - Content Generation
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AgendaGenerationRequest'
-      responses:
-        '200':
-          description: Agenda generated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneratedAgenda'
-
-  /api/generate/speakers:
-    post:
-      summary: Generate speaker suggestions
-      description: Generate speaker recommendations based on event theme and requirements
-      tags:
-        - Content Generation
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SpeakerGenerationRequest'
-      responses:
-        '200':
-          description: Speaker suggestions generated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneratedSpeakers'
-
-  /api/generate/sponsors:
-    post:
-      summary: Generate sponsor suggestions
-      description: Generate sponsor recommendations based on event details and industry
-      tags:
-        - Content Generation
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SponsorGenerationRequest'
-      responses:
-        '200':
-          description: Sponsor suggestions generated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GeneratedSponsors'
-
-  /api/analyze/text:
-    post:
-      summary: Analyze text content
-      description: Analyze text for key insights, themes, and recommendations
-      tags:
-        - Content Analysis
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - text
-              properties:
-                text:
-                  type: string
-                  description: Text content to analyze
-                analysisType:
-                  type: string
-                  enum: [THEMES, INSIGHTS, SENTIMENT, KEYWORDS, SUMMARY]
-                  default: INSIGHTS
-                context:
-                  type: string
-                  description: Additional context for analysis
-      responses:
-        '200':
-          description: Text analysis completed successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TextAnalysisResult'
-
-  /api/recommendations:
-    post:
-      summary: Get AI recommendations
-      description: Get contextual recommendations for concept improvement
-      tags:
-        - Recommendations
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RecommendationRequest'
-      responses:
-        '200':
-          description: Recommendations generated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecommendationResponse'
-
-  /api/knowledge-base:
-    get:
-      summary: Query knowledge base
-      description: Search the RAG knowledge base for relevant information
-      tags:
-        - Knowledge Base
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: query
-          in: query
-          required: true
-          description: Search query
-          schema:
-            type: string
-        - name: conceptId
-          in: query
-          description: Filter by concept context
-          schema:
-            type: string
-            format: uuid
-        - name: documentTypes
-          in: query
-          description: Filter by document types
-          schema:
-            type: array
-            items:
-              type: string
-              enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES]
-        - name: limit
-          in: query
-          description: Maximum number of results
-          schema:
-            type: integer
-            default: 10
-            minimum: 1
-            maximum: 50
-      responses:
-        '200':
-          description: Knowledge base query successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/KnowledgeBaseResult'
-                  totalResults:
-                    type: integer
-                  queryTime:
-                    type: number
-                    description: Query execution time in milliseconds
-
-  /api/models:
-    get:
-      summary: Get available AI models
-      description: List available AI models and their capabilities
-      tags:
-        - Model Management
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Available models retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  llmModels:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AIModel'
-                  embeddingModels:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AIModel'
+                                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -595,15 +309,39 @@ components:
       type: object
       required:
         - message
-        - conceptId
+        - concept
       properties:
         message:
           type: string
           example: "Can you suggest some innovative workshop formats for our tech summit?"
-        conceptId:
-          type: string
-          format: uuid
-          description: Associated concept ID for context
+        concept:
+          type: object
+          description: The complete concept object for context
+          properties:
+            id:
+              type: string
+              format: uuid
+            title:
+              type: string
+            description:
+              type: string
+            status:
+              type: string
+              enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+            eventDetails:
+              type: object
+            agenda:
+              type: array
+              items:
+                type: object
+            speakers:
+              type: array
+              items:
+                type: object
+            sponsors:
+              type: array
+              items:
+                type: object
         conversationId:
           type: string
           format: uuid
@@ -655,7 +393,7 @@ components:
           description: Recommended questions to ask next
         conceptSuggestion:
           type: object
-          description: Optional complete concept suggestion that user can accept
+          description: "Complete concept suggestion that user can accept"
           properties:
             title:
               type: string
@@ -663,27 +401,82 @@ components:
               type: string
             eventDetails:
               type: object
+              properties:
+                theme:
+                  type: string
+                format:
+                  type: string
+                  enum: [PHYSICAL, VIRTUAL, HYBRID]
+                capacity:
+                  type: integer
+                duration:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                targetAudience:
+                  type: string
+                objectives:
+                  type: array
+                  items:
+                    type: string
+                location:
+                  type: string
             agenda:
               type: array
               items:
                 type: object
+                properties:
+                  time:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  type:
+                    type: string
+                    enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK, LUNCH]
+                  speaker:
+                    type: string
+                  duration:
+                    type: integer
             speakers:
               type: array
               items:
                 type: object
-            sponsors:
-              type: array
-              items:
-                type: object
-            ticketPricing:
+                properties:
+                  name:
+                    type: string
+                  expertise:
+                    type: string
+                  suggestedTopic:
+                    type: string
+                  bio:
+                    type: string
+            pricing:
               type: object
+              properties:
+                currency:
+                  type: string
+                earlyBird:
+                  type: number
+                regular:
+                  type: number
+                vip:
+                  type: number
+                student:
+                  type: number
+                group:
+                  type: number
+            notes:
+              type: string
             reasoning:
               type: string
-              description: Explanation of why this concept structure is suggested
             confidence:
               type: number
-              minimum: 0
-              maximum: 1
         conceptUpdates:
           type: object
           description: Suggested partial updates to the existing concept
@@ -737,55 +530,9 @@ components:
         uploadedAt:
           type: string
           format: date-time
-        processingStatus:
-          type: string
-          enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
-
-    DocumentStatus:
-      type: object
-      properties:
-        documentId:
-          type: string
-          format: uuid
-        filename:
-          type: string
         status:
           type: string
           enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
-        progress:
-          type: integer
-          minimum: 0
-          maximum: 100
-          description: Processing progress percentage
-        stages:
-          type: object
-          properties:
-            extraction:
-              type: string
-              enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
-            embedding:
-              type: string
-              enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
-            indexing:
-              type: string
-              enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
-        error:
-          type: string
-          description: Error message if processing failed
-        processedAt:
-          type: string
-          format: date-time
-        metadata:
-          type: object
-          properties:
-            pageCount:
-              type: integer
-            wordCount:
-              type: integer
-            language:
-              type: string
-            extractedImages:
-              type: integer
 
     ProcessedDocument:
       type: object
@@ -801,31 +548,10 @@ components:
         status:
           type: string
           enum: [PROCESSING, COMPLETED, FAILED]
-        summary:
+        s3Location:
           type: string
-          description: AI-generated summary of the document
-        keyInsights:
-          type: array
-          items:
-            type: string
-          description: Extracted key insights
-        themes:
-          type: array
-          items:
-            type: string
-          description: Identified themes and topics
-        entities:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-              type:
-                type: string
-                enum: [PERSON, ORGANIZATION, LOCATION, EVENT, TECHNOLOGY]
-              confidence:
-                type: number
+          description: S3 bucket path where the document is stored
+          example: "s3://concepter-documents/user123/doc456.pdf"
         uploadedAt:
           type: string
           format: date-time
@@ -835,411 +561,6 @@ components:
         conceptId:
           type: string
           format: uuid
-
-    ConceptGenerationRequest:
-      type: object
-      required:
-        - requirements
-      properties:
-        requirements:
-          type: object
-          required:
-            - title
-            - targetAudience
-          properties:
-            title:
-              type: string
-              example: "AI Innovation Summit 2024"
-            targetAudience:
-              type: string
-              example: "Technology professionals and entrepreneurs"
-            expectedAttendees:
-              type: integer
-              example: 500
-            duration:
-              type: string
-              example: "2 days"
-            budget:
-              type: string
-              example: "€100,000"
-            format:
-              type: string
-              enum: [PHYSICAL, VIRTUAL, HYBRID]
-            objectives:
-              type: array
-              items:
-                type: string
-            industry:
-              type: string
-        conceptId:
-          type: string
-          format: uuid
-          description: Existing concept to enhance
-        includeDocumentContext:
-          type: boolean
-          default: true
-        generationOptions:
-          type: object
-          properties:
-            creativity:
-              type: string
-              enum: [CONSERVATIVE, BALANCED, CREATIVE]
-              default: BALANCED
-            includeAgenda:
-              type: boolean
-              default: true
-            includeSpeakers:
-              type: boolean
-              default: true
-            includeSponsors:
-              type: boolean
-              default: false
-
-    GeneratedConcept:
-      type: object
-      properties:
-        title:
-          type: string
-        theme:
-          type: string
-        description:
-          type: string
-        objectives:
-          type: array
-          items:
-            type: string
-        targetAudience:
-          type: string
-        keyTopics:
-          type: array
-          items:
-            type: string
-        format:
-          type: string
-          enum: [PHYSICAL, VIRTUAL, HYBRID]
-        suggestedAgenda:
-          type: array
-          items:
-            type: object
-            properties:
-              session:
-                type: string
-              duration:
-                type: string
-              description:
-                type: string
-              type:
-                type: string
-        suggestedSpeakers:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-              expertise:
-                type: string
-              reason:
-                type: string
-        marketingAngles:
-          type: array
-          items:
-            type: string
-        recommendedVenue:
-          type: string
-        confidenceScore:
-          type: number
-          minimum: 0
-          maximum: 1
-        sources:
-          type: array
-          items:
-            $ref: '#/components/schemas/Source'
-
-    AgendaGenerationRequest:
-      type: object
-      required:
-        - conceptDetails
-      properties:
-        conceptDetails:
-          type: object
-          properties:
-            theme:
-              type: string
-            duration:
-              type: string
-            format:
-              type: string
-            keyTopics:
-              type: array
-              items:
-                type: string
-            targetAudience:
-              type: string
-        preferences:
-          type: object
-          properties:
-            sessionTypes:
-              type: array
-              items:
-                type: string
-                enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK]
-            includeNetworking:
-              type: boolean
-              default: true
-            workshopRatio:
-              type: number
-              minimum: 0
-              maximum: 1
-
-    GeneratedAgenda:
-      type: object
-      properties:
-        agenda:
-          type: array
-          items:
-            type: object
-            properties:
-              day:
-                type: integer
-              time:
-                type: string
-              title:
-                type: string
-              description:
-                type: string
-              type:
-                type: string
-              duration:
-                type: integer
-              suggestedSpeaker:
-                type: string
-              learningObjectives:
-                type: array
-                items:
-                  type: string
-        alternativeFormats:
-          type: array
-          items:
-            type: string
-        reasoning:
-          type: string
-
-    SpeakerGenerationRequest:
-      type: object
-      required:
-        - eventTheme
-      properties:
-        eventTheme:
-          type: string
-        keyTopics:
-          type: array
-          items:
-            type: string
-        targetAudience:
-          type: string
-        budget:
-          type: string
-        speakerTypes:
-          type: array
-          items:
-            type: string
-            enum: [KEYNOTE, INDUSTRY_EXPERT, ACADEMIC, STARTUP_FOUNDER, THOUGHT_LEADER]
-        count:
-          type: integer
-          default: 5
-          minimum: 1
-          maximum: 20
-
-    GeneratedSpeakers:
-      type: object
-      properties:
-        speakers:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-              title:
-                type: string
-              company:
-                type: string
-              expertise:
-                type: array
-                items:
-                  type: string
-              relevance:
-                type: string
-              suggestedTopic:
-                type: string
-              estimatedFee:
-                type: string
-              availabilityNotes:
-                type: string
-              confidence:
-                type: number
-
-    SponsorGenerationRequest:
-      type: object
-      required:
-        - eventDetails
-      properties:
-        eventDetails:
-          type: object
-          properties:
-            industry:
-              type: string
-            theme:
-              type: string
-            expectedAttendees:
-              type: integer
-            targetAudience:
-              type: string
-        sponsorshipTiers:
-          type: array
-          items:
-            type: string
-            enum: [PLATINUM, GOLD, SILVER, BRONZE]
-        targetBudget:
-          type: string
-
-    GeneratedSponsors:
-      type: object
-      properties:
-        sponsors:
-          type: array
-          items:
-            type: object
-            properties:
-              companyName:
-                type: string
-              industry:
-                type: string
-              relevance:
-                type: string
-              suggestedTier:
-                type: string
-              expectedContribution:
-                type: string
-              contactApproach:
-                type: string
-              alignment:
-                type: string
-
-    TextAnalysisResult:
-      type: object
-      properties:
-        analysis:
-          type: object
-          properties:
-            themes:
-              type: array
-              items:
-                type: object
-                properties:
-                  theme:
-                    type: string
-                  confidence:
-                    type: number
-                  examples:
-                    type: array
-                    items:
-                      type: string
-            insights:
-              type: array
-              items:
-                type: string
-            sentiment:
-              type: object
-              properties:
-                overall:
-                  type: string
-                  enum: [POSITIVE, NEGATIVE, NEUTRAL]
-                score:
-                  type: number
-                  minimum: -1
-                  maximum: 1
-            keywords:
-              type: array
-              items:
-                type: object
-                properties:
-                  keyword:
-                    type: string
-                  relevance:
-                    type: number
-            summary:
-              type: string
-
-    RecommendationRequest:
-      type: object
-      required:
-        - conceptId
-        - requestType
-      properties:
-        conceptId:
-          type: string
-          format: uuid
-        requestType:
-          type: string
-          enum: [IMPROVEMENTS, COST_OPTIMIZATION, AUDIENCE_EXPANSION, SPEAKER_ALTERNATIVES, VENUE_OPTIONS]
-        currentConcept:
-          type: object
-          description: Current concept details for analysis
-        constraints:
-          type: object
-          properties:
-            budget:
-              type: string
-            timeline:
-              type: string
-            location:
-              type: string
-
-    RecommendationResponse:
-      type: object
-      properties:
-        recommendations:
-          type: array
-          items:
-            type: object
-            properties:
-              type:
-                type: string
-              title:
-                type: string
-              description:
-                type: string
-              impact:
-                type: string
-                enum: [LOW, MEDIUM, HIGH]
-              effort:
-                type: string
-                enum: [LOW, MEDIUM, HIGH]
-              reasoning:
-                type: string
-              sources:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Source'
-        priority:
-          type: string
-          enum: [LOW, MEDIUM, HIGH, CRITICAL]
-
-    KnowledgeBaseResult:
-      type: object
-      properties:
-        content:
-          type: string
-        source:
-          $ref: '#/components/schemas/Source'
-        relevanceScore:
-          type: number
-          minimum: 0
-          maximum: 1
-        context:
-          type: string
 
     Source:
       type: object
@@ -1256,33 +577,9 @@ components:
         confidence:
           type: number
 
-    AIModel:
-      type: object
-      properties:
-        name:
-          type: string
-        provider:
-          type: string
-        type:
-          type: string
-          enum: [LLM, EMBEDDING, MULTIMODAL]
-        capabilities:
-          type: array
-          items:
-            type: string
-        maxTokens:
-          type: integer
-        isActive:
-          type: boolean
-
     UserPreferences:
       type: object
       properties:
-        defaultEventCapacity:
-          type: integer
-          minimum: 1
-          maximum: 100000
-          example: 500
         preferredEventFormat:
           type: string
           enum: [PHYSICAL, VIRTUAL, HYBRID]
@@ -1290,50 +587,12 @@ components:
         industry:
           type: string
           example: "Technology"
-        timezone:
-          type: string
-          example: "Europe/Berlin"
         language:
           type: string
           example: "en"
-        emailNotifications:
-          type: object
-          properties:
-            conceptUpdates:
-              type: boolean
-              example: true
-            aiSuggestions:
-              type: boolean
-              example: true
-            weeklyDigest:
-              type: boolean
-              example: false
-        defaultBudgetRange:
-          type: object
-          properties:
-            min:
-              type: number
-              example: 10000
-            max:
-              type: number
-              example: 100000
-            currency:
-              type: string
-              example: "EUR"
-        preferredVenues:
-          type: array
-          items:
-            type: string
-          example: ["Convention Centers", "Hotels", "University Campuses"]
-        collaborationPreferences:
-          type: object
-          properties:
-            allowTeamAccess:
-              type: boolean
-              example: true
-            shareAnalytics:
-              type: boolean
-              example: false
+        timezone:
+          type: string
+          example: "Europe/Berlin"
 
     ErrorResponse:
       type: object
@@ -1364,14 +623,4 @@ tags:
   - name: Chat Interface
     description: Interactive AI chat for concept development
   - name: Document Processing
-    description: Document upload, processing, and RAG integration
-  - name: Content Generation
-    description: AI-powered content creation for events
-  - name: Content Analysis
-    description: Text analysis and insight extraction
-  - name: Recommendations
-    description: AI-powered recommendations and suggestions
-  - name: Knowledge Base
-    description: RAG knowledge base queries
-  - name: Model Management
-    description: AI model configuration and management 
+    description: Document upload, processing, and RAG integration 
