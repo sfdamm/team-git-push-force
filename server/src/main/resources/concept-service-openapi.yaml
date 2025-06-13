@@ -1,0 +1,1282 @@
+openapi: 3.0.3
+info:
+  title: AI Event Concepter - Concept Service
+  description: |
+    Concept Service for the AI Event Concepter platform. Handles CRUD operations
+    for event concepts, PDF rendering, and concept management.
+    
+    This service manages:
+    - Event concept creation, retrieval, update, and deletion
+    - Concept versioning and status management
+    - PDF generation and export
+    - Concept templates and cloning
+    - Integration with GenAI service for AI-enhanced concepts
+  version: 1.0.0
+  contact:
+    name: AI Event Concepter Team
+    email: support@aieventconcepter.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8082
+    description: Development server (Concept Service)
+  - url: https://concepts.aieventconcepter.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the Concept Service is running
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+                    example: "concept-service"
+
+  /api/concepts:
+    get:
+      summary: Get user's concepts
+      description: Retrieve paginated list of concepts for the authenticated user
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-based)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          description: Sort criteria (field,direction)
+          schema:
+            type: string
+            default: "updatedAt,desc"
+            example: "title,asc"
+        - name: status
+          in: query
+          description: Filter by concept status
+          schema:
+            type: string
+            enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        - name: search
+          in: query
+          description: Search term for filtering concepts
+          schema:
+            type: string
+        - name: format
+          in: query
+          description: Filter by event format
+          schema:
+            type: string
+            enum: [PHYSICAL, VIRTUAL, HYBRID]
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          schema:
+            type: string
+            example: "technology,innovation,conference"
+      responses:
+        '200':
+          description: Concepts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConceptSummary'
+                  pageable:
+                    $ref: '#/components/schemas/Pageable'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  last:
+                    type: boolean
+                  size:
+                    type: integer
+                  number:
+                    type: integer
+                  first:
+                    type: boolean
+                  empty:
+                    type: boolean
+
+    post:
+      summary: Create new concept
+      description: Create a new event concept
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConceptRequest'
+      responses:
+        '201':
+          description: Concept created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}:
+    get:
+      summary: Get concept by ID
+      description: Retrieve a specific concept by its ID
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: includeHistory
+          in: query
+          description: Include concept history/versions
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Concept retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update concept
+      description: Update an existing concept with partial or complete data
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConceptRequest'
+      responses:
+        '200':
+          description: Concept updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/apply-suggestion:
+    post:
+      summary: Apply AI concept suggestion
+      description: Apply a complete concept suggestion received from the AI chat interface
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - suggestion
+              properties:
+                suggestion:
+                  type: object
+                  description: The complete concept suggestion from AI chat
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    eventDetails:
+                      $ref: '#/components/schemas/EventDetails'
+                    agenda:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/AgendaItem'
+                    speakers:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Speaker'
+                    sponsors:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Sponsor'
+                    ticketPricing:
+                      $ref: '#/components/schemas/TicketPricing'
+                    venue:
+                      $ref: '#/components/schemas/Venue'
+                    marketing:
+                      $ref: '#/components/schemas/MarketingDetails'
+                    budget:
+                      $ref: '#/components/schemas/Budget'
+                applyMode:
+                  type: string
+                  enum: [REPLACE, MERGE]
+                  default: MERGE
+                  description: Whether to replace the entire concept or merge with existing data
+                reasoning:
+                  type: string
+                  description: Explanation from AI about why this suggestion was made
+      responses:
+        '200':
+          description: Concept suggestion applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  concept:
+                    $ref: '#/components/schemas/Concept'
+                  appliedChanges:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        oldValue:
+                          type: string
+                        newValue:
+                          type: string
+                        action:
+                          type: string
+                          enum: [ADDED, UPDATED, REPLACED]
+        '400':
+          description: Invalid suggestion data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete concept
+      description: Delete a concept (moves to ARCHIVED status)
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: permanent
+          in: query
+          description: Permanently delete (Admin only)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Concept deleted successfully
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/clone:
+    post:
+      summary: Clone concept
+      description: Create a copy of an existing concept
+      tags:
+        - Concept Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID to clone
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Copy of Tech Innovation Summit 2024"
+                includeDocuments:
+                  type: boolean
+                  default: false
+                  description: Whether to include uploaded documents
+      responses:
+        '201':
+          description: Concept cloned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '404':
+          description: Original concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/pdf:
+    get:
+      summary: Generate concept PDF
+      description: Generate and download the concept as a PDF file
+      tags:
+        - PDF Export
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: template
+          in: query
+          description: PDF template to use
+          schema:
+            type: string
+            enum: [STANDARD, EXECUTIVE, DETAILED, PITCH]
+            default: STANDARD
+        - name: includeAppendix
+          in: query
+          description: Include appendix with additional details
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Suggested filename for download
+              schema:
+                type: string
+                example: 'attachment; filename="concept-tech-summit-2024.pdf"'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/export:
+    get:
+      summary: Export concept data
+      description: Export concept in various formats (JSON, CSV, etc.)
+      tags:
+        - Export
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          description: Export format
+          schema:
+            type: string
+            enum: [JSON, CSV, EXCEL]
+            default: JSON
+      responses:
+        '200':
+          description: Concept exported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /api/concepts/{conceptId}/versions:
+    get:
+      summary: Get concept versions
+      description: Retrieve version history of a concept
+      tags:
+        - Version Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Concept versions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConceptVersion'
+
+  /api/concepts/{conceptId}/restore/{versionId}:
+    post:
+      summary: Restore concept version
+      description: Restore a concept to a previous version
+      tags:
+        - Version Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: versionId
+          in: path
+          required: true
+          description: Version ID to restore
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Concept restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '404':
+          description: Concept or version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/templates:
+    get:
+      summary: Get concept templates
+      description: Retrieve available concept templates
+      tags:
+        - Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          description: Filter by template category
+          schema:
+            type: string
+            enum: [CONFERENCE, WORKSHOP, WEBINAR, TRADE_SHOW, NETWORKING]
+        - name: industry
+          in: query
+          description: Filter by industry
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConceptTemplate'
+
+  /api/concepts/templates/{templateId}:
+    post:
+      summary: Create concept from template
+      description: Create a new concept based on a template
+      tags:
+        - Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                customizations:
+                  type: object
+                  description: Template customizations
+      responses:
+        '201':
+          description: Concept created from template successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+
+  /api/concepts/{conceptId}/share:
+    post:
+      summary: Share concept
+      description: Generate shareable link for concept
+      tags:
+        - Sharing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permissions:
+                  type: string
+                  enum: [VIEW, EDIT]
+                  default: VIEW
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: Link expiration date
+                password:
+                  type: string
+                  description: Optional password protection
+      responses:
+        '200':
+          description: Share link generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shareId:
+                    type: string
+                    format: uuid
+                  shareUrl:
+                    type: string
+                    format: uri
+                  permissions:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Concept:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Tech Innovation Summit 2024"
+        description:
+          type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+          example: "IN_PROGRESS"
+        eventDetails:
+          $ref: '#/components/schemas/EventDetails'
+        agenda:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        sponsors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sponsor'
+        ticketPricing:
+          $ref: '#/components/schemas/TicketPricing'
+        venue:
+          $ref: '#/components/schemas/Venue'
+        marketing:
+          $ref: '#/components/schemas/MarketingDetails'
+        budget:
+          $ref: '#/components/schemas/Budget'
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["technology", "innovation", "conference"]
+        aiGenerated:
+          type: boolean
+          description: Whether content was AI-generated
+          example: true
+        version:
+          type: integer
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+          format: uuid
+        lastModifiedBy:
+          type: string
+          format: uuid
+
+    ConceptSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          maxLength: 200
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        eventFormat:
+          type: string
+          enum: [PHYSICAL, VIRTUAL, HYBRID]
+        expectedAttendees:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateConceptRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: "Tech Innovation Summit 2024"
+        description:
+          type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
+        templateId:
+          type: string
+          format: uuid
+          description: Optional template to base concept on
+        initialRequirements:
+          type: object
+          properties:
+            targetAudience:
+              type: string
+            expectedCapacity:
+              type: integer
+            preferredFormat:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            budget:
+              type: string
+            location:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateConceptRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        eventDetails:
+          $ref: '#/components/schemas/EventDetails'
+        agenda:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        sponsors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sponsor'
+        ticketPricing:
+          $ref: '#/components/schemas/TicketPricing'
+        venue:
+          $ref: '#/components/schemas/Venue'
+        marketing:
+          $ref: '#/components/schemas/MarketingDetails'
+        budget:
+          $ref: '#/components/schemas/Budget'
+        tags:
+          type: array
+          items:
+            type: string
+
+    EventDetails:
+      type: object
+      properties:
+        theme:
+          type: string
+          example: "Future of AI in Business"
+        format:
+          type: string
+          enum: [PHYSICAL, VIRTUAL, HYBRID]
+          example: "HYBRID"
+        capacity:
+          type: integer
+          example: 500
+        duration:
+          type: string
+          example: "2 days"
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        targetAudience:
+          type: string
+          example: "Technology professionals, entrepreneurs, and innovators"
+        objectives:
+          type: array
+          items:
+            type: string
+          example: ["Showcase latest AI innovations", "Network with industry leaders"]
+        keyTopics:
+          type: array
+          items:
+            type: string
+          example: ["Machine Learning", "AI Ethics", "Future Technologies"]
+
+    AgendaItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        time:
+          type: string
+          example: "09:00-10:30"
+        title:
+          type: string
+          example: "Opening Keynote: The Future of AI"
+        description:
+          type: string
+        type:
+          type: string
+          enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK, LUNCH]
+        speaker:
+          type: string
+          example: "Dr. Jane Smith"
+        location:
+          type: string
+          example: "Main Auditorium"
+        duration:
+          type: integer
+          description: Duration in minutes
+          example: 90
+        isBreakout:
+          type: boolean
+          default: false
+
+    Speaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Dr. Jane Smith"
+        title:
+          type: string
+          example: "Chief AI Officer"
+        company:
+          type: string
+          example: "TechCorp Inc."
+        bio:
+          type: string
+        expertise:
+          type: array
+          items:
+            type: string
+          example: ["Artificial Intelligence", "Machine Learning", "Data Science"]
+        image:
+          type: string
+          format: uri
+        website:
+          type: string
+          format: uri
+        social:
+          type: object
+          properties:
+            linkedin:
+              type: string
+            twitter:
+              type: string
+        fee:
+          type: number
+          description: Speaker fee
+        confirmed:
+          type: boolean
+          default: false
+
+    Sponsor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "TechCorp Inc."
+        tier:
+          type: string
+          enum: [PLATINUM, GOLD, SILVER, BRONZE, PARTNER]
+          example: "GOLD"
+        contribution:
+          type: number
+          description: Sponsorship amount
+        benefits:
+          type: array
+          items:
+            type: string
+          example: ["Logo on materials", "Exhibition booth", "Speaking slot"]
+        logo:
+          type: string
+          format: uri
+        website:
+          type: string
+          format: uri
+        contact:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+        confirmed:
+          type: boolean
+          default: false
+
+    TicketPricing:
+      type: object
+      properties:
+        currency:
+          type: string
+          example: "EUR"
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Early Bird"
+              price:
+                type: number
+                example: 299.99
+              description:
+                type: string
+              availableUntil:
+                type: string
+                format: date
+              quantity:
+                type: integer
+                description: Number of tickets available
+              benefits:
+                type: array
+                items:
+                  type: string
+        discounts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [STUDENT, GROUP, EARLY_BIRD, CORPORATE]
+              percentage:
+                type: number
+              description:
+                type: string
+
+    Venue:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Convention Center Munich"
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            country:
+              type: string
+            postalCode:
+              type: string
+        capacity:
+          type: integer
+        facilities:
+          type: array
+          items:
+            type: string
+          example: ["Wi-Fi", "A/V Equipment", "Catering Kitchen"]
+        accessibility:
+          type: array
+          items:
+            type: string
+        cost:
+          type: number
+        contact:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+
+    MarketingDetails:
+      type: object
+      properties:
+        websiteUrl:
+          type: string
+          format: uri
+        registrationUrl:
+          type: string
+          format: uri
+        socialMediaHandles:
+          type: object
+          properties:
+            twitter:
+              type: string
+            linkedin:
+              type: string
+            facebook:
+              type: string
+        hashtags:
+          type: array
+          items:
+            type: string
+          example: ["#TechSummit2024", "#AI", "#Innovation"]
+        pressRelease:
+          type: string
+        mediaKit:
+          type: string
+          format: uri
+
+    Budget:
+      type: object
+      properties:
+        totalBudget:
+          type: number
+        currency:
+          type: string
+          example: "EUR"
+        breakdown:
+          type: object
+          properties:
+            venue:
+              type: number
+            catering:
+              type: number
+            speakers:
+              type: number
+            marketing:
+              type: number
+            technology:
+              type: number
+            staffing:
+              type: number
+            miscellaneous:
+              type: number
+        revenue:
+          type: object
+          properties:
+            ticketSales:
+              type: number
+            sponsorships:
+              type: number
+            other:
+              type: number
+
+    ConceptVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        title:
+          type: string
+        changes:
+          type: string
+          description: Summary of changes in this version
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: uuid
+
+    ConceptTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Technology Conference Template"
+        description:
+          type: string
+        category:
+          type: string
+          enum: [CONFERENCE, WORKSHOP, WEBINAR, TRADE_SHOW, NETWORKING]
+        industry:
+          type: string
+        template:
+          $ref: '#/components/schemas/Concept'
+
+    Pageable:
+      type: object
+      properties:
+        sort:
+          type: object
+        offset:
+          type: integer
+        pageSize:
+          type: integer
+        pageNumber:
+          type: integer
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input data"
+        details:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: "/api/concepts"
+        status:
+          type: integer
+          example: 400
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Concept Management
+    description: CRUD operations for event concepts
+  - name: PDF Export
+    description: PDF generation and export
+  - name: Export
+    description: Data export in various formats
+  - name: Version Management
+    description: Concept versioning and history
+  - name: Templates
+    description: Concept templates management
+  - name: Sharing
+    description: Concept sharing and collaboration 

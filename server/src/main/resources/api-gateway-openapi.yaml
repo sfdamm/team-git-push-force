@@ -1,0 +1,882 @@
+openapi: 3.0.3
+info:
+  title: AI Event Concepter - API Gateway
+  description: |
+    API Gateway for the AI Event Concepter platform. Handles JWT authentication, 
+    request routing to microservices, and provides unified API documentation.
+    
+    This gateway routes requests to:
+    - User Service (port 8081): User management, roles, preferences
+    - Concept Service (port 8082): CRUD for concepts, PDF rendering
+    - GenAI Service (port 5000): Document ingestion, RAG pipeline, content creation
+  version: 1.0.0
+  contact:
+    name: AI Event Concepter Team
+    email: support@aieventconcepter.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server (API Gateway)
+  - url: https://api.aieventconcepter.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API Gateway is running
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate user and return JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "planner@eventcorp.com"
+                password:
+                  type: string
+                  format: password
+                  example: "SecurePassword123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT token
+      description: Refresh an expired JWT token using refresh token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Invalidate the current JWT token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+
+  /auth/register:
+    post:
+      summary: User registration
+      description: Register a new user account and return JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@eventcorp.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePassword123!"
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+                preferences:
+                  type: object
+                  properties:
+                    defaultEventCapacity:
+                      type: integer
+                      example: 500
+                    preferredEventFormat:
+                      type: string
+                      enum: [PHYSICAL, VIRTUAL, HYBRID]
+                      example: "HYBRID"
+                    industry:
+                      type: string
+                      example: "Technology"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Service Routes (Proxied)
+    get:
+      summary: Get all users
+      description: Retrieve list of users (Admin only)
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: "createdAt,desc"
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  size:
+                    type: integer
+                  number:
+                    type: integer
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/profile:
+    get:
+      summary: Get current user profile and settings
+      description: Retrieve the authenticated user's profile and settings
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: Update user profile and settings
+      description: Update the authenticated user's profile and settings
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # Concept Service Routes (Proxied)
+  /api/concepts:
+    get:
+      summary: Get user's concepts
+      description: Retrieve all concepts for the authenticated user
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+      responses:
+        '200':
+          description: Concepts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Concept'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+
+    post:
+      summary: Create new concept
+      description: Create a new event concept
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConceptRequest'
+      responses:
+        '201':
+          description: Concept created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+
+  /api/concepts/{conceptId}:
+    get:
+      summary: Get concept by ID
+      description: Retrieve a specific concept by its ID
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Concept retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/pdf:
+    get:
+      summary: Download concept as PDF
+      description: Generate and download the concept as a PDF file
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/concepts/{conceptId}/apply-suggestion:
+    post:
+      summary: Apply AI concept suggestion
+      description: Apply a complete concept suggestion from AI chat to the concept
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - suggestion
+              properties:
+                suggestion:
+                  type: object
+                  description: Complete concept suggestion from AI
+                applyMode:
+                  type: string
+                  enum: [REPLACE, MERGE]
+                  default: MERGE
+      responses:
+        '200':
+          description: Concept suggestion applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+
+  # GenAI Service Routes (Proxied)
+  /api/genai/chat/initialize:
+    post:
+      summary: Initialize chat for new concept
+      description: Create personalized welcome message for new concept
+      tags:
+        - GenAI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - conceptId
+              properties:
+                conceptId:
+                  type: string
+                  format: uuid
+                conceptTitle:
+                  type: string
+      responses:
+        '200':
+          description: Welcome message generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                  conversationId:
+                    type: string
+                    format: uuid
+
+  /api/genai/chat:
+    post:
+      summary: Chat with AI assistant
+      description: Send a message to the AI assistant for concept development
+      tags:
+        - GenAI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: AI response generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+
+  /api/genai/documents:
+    post:
+      summary: Upload documents for processing
+      description: Upload documents for the AI to analyze and use in concept generation
+      tags:
+        - GenAI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                conceptId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Documents uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processedDocuments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProcessedDocument'
+
+  /api/genai/documents/{conceptId}:
+    get:
+      summary: Get documents for concept
+      description: Retrieve all documents associated with a concept
+      tags:
+        - GenAI
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProcessedDocument'
+                  totalCount:
+                    type: integer
+
+  /api/genai/documents/{documentId}:
+    delete:
+      summary: Delete document
+      description: Delete a document from concept and knowledge base
+      tags:
+        - GenAI
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted successfully
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        tokenType:
+          type: string
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferences:
+          type: object
+          properties:
+            defaultEventCapacity:
+              type: integer
+            preferredEventFormat:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            industry:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferences:
+          type: object
+          properties:
+            defaultEventCapacity:
+              type: integer
+            preferredEventFormat:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            industry:
+              type: string
+
+    Concept:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        eventDetails:
+          type: object
+          properties:
+            theme:
+              type: string
+            format:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            capacity:
+              type: integer
+            duration:
+              type: string
+            targetAudience:
+              type: string
+        agenda:
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK]
+        speakers:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              title:
+                type: string
+              company:
+                type: string
+              expertise:
+                type: string
+        sponsors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              tier:
+                type: string
+                enum: [PLATINUM, GOLD, SILVER, BRONZE]
+              contribution:
+                type: string
+        ticketPricing:
+          type: object
+          properties:
+            earlyBird:
+              type: number
+            regular:
+              type: number
+            vip:
+              type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+          format: uuid
+
+    CreateConceptRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: "Tech Innovation Summit 2024"
+        description:
+          type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
+        initialRequirements:
+          type: object
+          properties:
+            targetAudience:
+              type: string
+            expectedCapacity:
+              type: integer
+            preferredFormat:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            budget:
+              type: string
+
+    ChatRequest:
+      type: object
+      required:
+        - message
+        - conceptId
+      properties:
+        message:
+          type: string
+          example: "Can you suggest some keynote speakers for a tech innovation summit?"
+        conceptId:
+          type: string
+          format: uuid
+        context:
+          type: object
+          properties:
+            previousInteractions:
+              type: array
+              items:
+                type: string
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+        conceptSuggestion:
+          type: object
+          description: "Complete concept suggestion that user can accept"
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            eventDetails:
+              type: object
+            agenda:
+              type: array
+              items:
+                type: object
+            reasoning:
+              type: string
+            confidence:
+              type: number
+        conceptUpdates:
+          type: object
+          description: "Partial updates to the concept based on the conversation"
+
+    ProcessedDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        type:
+          type: string
+          enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES]
+        processingStatus:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+        extractedInsights:
+          type: array
+          items:
+            type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        status:
+          type: integer
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: Authentication and authorization
+  - name: Users
+    description: User management operations
+  - name: Concepts
+    description: Event concept management
+  - name: GenAI
+    description: AI-powered content generation 
