@@ -30,16 +30,16 @@
                     </div>
                     <h3>API Gateway</h3>
                     <p class="service-description">
-                        Central entry point with JWT authentication, routing, and unified API access.
+                        Central entry point providing unified API access, service routing, and request orchestration across all microservices.
                     </p>
                     <div class="service-details">
                         <span class="port">Port: 8080</span>
                         <span class="tech">Spring Boot 3</span>
                     </div>
                     <div class="service-features">
-                        <span class="feature">Authentication</span>
-                        <span class="feature">Routing</span>
-                        <span class="feature">Rate Limiting</span>
+                        <span class="feature">Service Routing</span>
+                        <span class="feature">API Aggregation</span>
+                        <span class="feature">Request Orchestration</span>
                     </div>
                     <div class="service-actions">
                         <a href="http://localhost:8090" class="btn btn-primary" target="_blank">
@@ -58,16 +58,16 @@
                     </div>
                     <h3>User Service</h3>
                     <p class="service-description">
-                        User management, authentication, roles, and preferences handling.
+                        Complete user lifecycle management including registration, authentication, profile management, and user preferences.
                     </p>
                     <div class="service-details">
                         <span class="port">Port: 8081</span>
-                        <span class="tech">Spring Boot 3 + JPA</span>
+                        <span class="tech">Spring Boot 3</span>
                     </div>
                     <div class="service-features">
-                        <span class="feature">User Management</span>
-                        <span class="feature">Role-based Access</span>
-                        <span class="feature">Preferences</span>
+                        <span class="feature">User Registration</span>
+                        <span class="feature">Profile Management</span>
+                        <span class="feature">User Preferences</span>
                     </div>
                     <div class="service-actions">
                         <a href="http://localhost:8091" class="btn btn-primary" target="_blank">
@@ -86,16 +86,16 @@
                     </div>
                     <h3>Concept Service</h3>
                     <p class="service-description">
-                        Event concept CRUD operations, PDF generation, and template management.
+                        Core business logic for managing event concepts including creation, storage, versioning, and export capabilities.
                     </p>
                     <div class="service-details">
                         <span class="port">Port: 8082</span>
-                        <span class="tech">Spring Boot 3 + JPA</span>
+                        <span class="tech">Spring Boot 3</span>
                     </div>
                     <div class="service-features">
-                        <span class="feature">Concept CRUD</span>
-                        <span class="feature">PDF Export</span>
-                        <span class="feature">Templates</span>
+                        <span class="feature">Concept Management</span>
+                        <span class="feature">Version Control</span>
+                        <span class="feature">Export to PDF/JSON</span>
                     </div>
                     <div class="service-actions">
                         <a href="http://localhost:8092" class="btn btn-primary" target="_blank">
@@ -114,22 +114,22 @@
                     </div>
                     <h3>GenAI Service</h3>
                     <p class="service-description">
-                        AI-powered content generation, document processing, and RAG pipeline.
+                        LangChain-powered service for document ingestion, RAG pipeline processing, and AI-driven content creation for event concepts.
                     </p>
                     <div class="service-details">
-                        <span class="port">Port: 5000</span>
-                        <span class="tech">Python + LangChain</span>
+                        <span class="port">Port: 8083</span>
+                        <span class="tech">Python + Flask + LangChain</span>
                     </div>
                     <div class="service-features">
-                        <span class="feature">AI Chat</span>
-                        <span class="feature">Document Processing</span>
+                        <span class="feature">Document Ingestion</span>
                         <span class="feature">RAG Pipeline</span>
+                        <span class="feature">Content Generation</span>
                     </div>
                     <div class="service-actions">
                         <a href="http://localhost:8093" class="btn btn-primary" target="_blank">
                             <i class="fas fa-book"></i> View API Docs
                         </a>
-                        <a href="http://localhost:5000/health" class="btn btn-secondary" target="_blank">
+                        <a href="http://localhost:8083" class="btn btn-secondary" target="_blank">
                             <i class="fas fa-heartbeat"></i> Health Check
                         </a>
                     </div>
@@ -170,25 +170,29 @@
                 <h2><i class="fas fa-rocket"></i> Quick Start</h2>
                 <div class="commands">
                     <div class="command-group">
-                        <h4>📚 View All Documentation</h4>
-                        <pre><code>docker-compose -f docker-compose.swagger.yml up -d</code></pre>
+                        <h4>🚀 Start All Documentation</h4>
+                        <pre><code>./start-docs.sh</code></pre>
+                        <small>Then visit: <a href="http://localhost:8094" target="_blank">http://localhost:8094</a> for the Documentation Hub</small>
                     </div>
                     <div class="command-group">
-                        <h4>🚀 Start API Gateway with Docs</h4>
-                        <pre><code>cd server && ./gradlew bootRun</code></pre>
-                        <small>Then visit: <a href="http://localhost:8080/swagger-ui.html" target="_blank">http://localhost:8080/swagger-ui.html</a></small>
+                        <h4>🛑 Stop All Documentation</h4>
+                        <pre><code>./stop-docs.sh</code></pre>
+                        <small>Cleanly stops all documentation services</small>
                     </div>
                     <div class="command-group">
                         <h4>🔍 Check Service Health</h4>
                         <pre><code>curl http://localhost:8080/health</code></pre>
+                        <small>Verify API Gateway is running</small>
                     </div>
                 </div>
             </div>
         </main>
-
-        <footer class="footer">
-            <p>&copy; 2024 AI Event Concepter Team. Built with ❤️ for TUM AET DevOps25.</p>
-        </footer>
     </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 AI Event Concepter Team. Built with ❤️ for TUM AET DevOps25.</p>
+        </div>
+    </footer>
 </body>
 </html> 
