@@ -81,10 +81,56 @@ This diagram provides a high-level overview of the system’s components and the
 
 ## 📁 Repository Structure
 
-The project is split into two main directories:
+The project is split into several main directories:
 
+- `/api`: OpenAPI specifications (single source of truth)
 - `/client`: Angular 19 frontend
-- `/server`: Spring Boot microservices (API Gateway, User Service, Concept Service)
+- `/server`: Spring Boot microservices (API Gateway)
+- `/user-svc`: User Service (Spring Boot)
+- `/concept-svc`: Concept Service (Spring Boot)
+- `/genai-svc`: GenAI Service (Python/Flask/LangChain)
+
+## 🔄 API-First Development
+
+This project follows an API-first development approach. All API changes start with updating the OpenAPI specifications in the `/api` directory.
+
+### API Directory Structure
+
+```
+/api                    # API specifications (single source of truth)
+  ├── gateway.yaml      # API Gateway specification
+  ├── user-service.yaml # User Service specification
+  ├── concept-service.yaml # Concept Service specification
+  ├── genai-service.yaml # GenAI Service specification
+  ├── scripts/          # Code generation scripts
+  └── README.md         # API documentation
+```
+
+### Development Workflow
+
+1. **Update API Specifications**: Make changes to the OpenAPI specs in the `/api` directory
+2. **Lint OpenAPI Specs**: Run `npm run lint:openapi` to validate the specs
+3. **Generate Code**: Run `npm run generate:code` to generate code from the specs
+4. **Implement Business Logic**: Implement the business logic using the generated code
+5. **Run Tests**: Run tests to verify the implementation
+6. **Submit PR**: Submit a PR with the changes
+
+### Available Scripts
+
+- `npm run lint:openapi`: Lint OpenAPI specifications
+- `npm run docs:openapi`: Generate API documentation
+- `npm run generate:code`: Generate code from OpenAPI specifications
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. The hooks are configured in `.pre-commit-config.yaml`.
+
+To install pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
 
 ---
 
