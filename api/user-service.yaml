@@ -4,7 +4,7 @@ info:
   description: |
     User Service for the AI Event Concepter platform. Handles user management,
     authentication, role-based access control, and user preferences.
-    
+
     This service manages:
     - User profile management (accessed via API Gateway)
     - Internal user data storage and retrieval
@@ -22,6 +22,9 @@ servers:
     description: Development server (User Service)
   - url: https://users.aieventconcepter.com
     description: Production server
+
+security:
+  - bearerAuth: []
 
 paths:
   /health:

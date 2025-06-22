@@ -23,6 +23,9 @@ servers:
   - url: https://api.aieventconcepter.com
     description: Production server
 
+security:
+  - bearerAuth: []
+
 paths:
   /health:
     get:
@@ -207,6 +210,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   # User Service Routes (Proxied)
+  /api/users:
     get:
       summary: Get all users
       description: Retrieve list of users (Admin only)
@@ -666,7 +670,7 @@ paths:
                   totalCount:
                     type: integer
 
-  /api/genai/documents/{documentId}:
+  /api/genai/documents/id/{documentId}:
     delete:
       summary: Delete document
       description: Delete a document from concept and knowledge base

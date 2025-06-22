@@ -4,7 +4,7 @@ info:
   description: |
     Concept Service for the AI Event Concepter platform. Handles CRUD operations
     for event concepts, PDF rendering, and concept management.
-    
+
     This service manages:
     - Event concept creation, retrieval, update, and deletion
     - Concept versioning and status management
@@ -24,6 +24,9 @@ servers:
     description: Development server (Concept Service)
   - url: https://concepts.aieventconcepter.com
     description: Production server
+
+security:
+  - bearerAuth: []
 
 paths:
   /health:

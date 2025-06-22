@@ -4,7 +4,7 @@ info:
   description: |
     GenAI Service for the AI Event Concepter platform. Handles AI-powered content generation,
     document processing, RAG pipeline, and intelligent event concept development.
-    
+
     This service provides:
     - Document ingestion and processing (PDF, Word, text files)
     - RAG (Retrieval-Augmented Generation) pipeline using LangChain + Weaviate
@@ -24,6 +24,9 @@ servers:
     description: Development server (GenAI Service)
   - url: https://genai.aieventconcepter.com
     description: Production server
+
+security:
+  - bearerAuth: []
 
 paths:
   /health:
@@ -265,7 +268,7 @@ paths:
                     type: integer
                     description: Total size of all documents in bytes
 
-  /api/documents/{documentId}:
+  /api/documents/id/{documentId}:
     delete:
       summary: Delete document
       description: Delete a specific document from a concept and remove it from the knowledge base
