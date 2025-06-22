@@ -55,7 +55,8 @@ generate_python() {
   # Generate client for GenAI service
   openapi-python-client generate \
     --path api/genai-service.yaml \
-    --output genai-svc/client
+    --output-path genai-svc/client \
+    --overwrite
 
   echo "Python client generation complete!"
 }

@@ -162,8 +162,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
-
   /api/documents:
     post:
       summary: Upload and process documents
@@ -172,30 +170,103 @@ paths:
         - Document Processing
       security:
         - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: query
+          required: true
+          description: Associated concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: documentType
+          in: query
+          required: false
+          description: Type of document being uploaded
+          schema:
+            type: string
+            enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES, OTHER]
+            default: OTHER
+        - name: extractImages
+          in: query
+          required: false
+          description: Whether to extract images from documents
+          schema:
+            type: boolean
+            default: false
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Document to upload (PDF, DOC, DOCX, TXT)
               required:
-                - files
+                - file
+      responses:
+        '200':
+          description: Document uploaded and processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadedDocument:
+                    $ref: '#/components/schemas/DocumentUploadResult'
+                  processingJobId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid file format or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/documents/batch:
+    post:
+      summary: Upload multiple documents
+      description: Upload multiple documents at once for AI analysis and RAG processing
+      tags:
+        - Document Processing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documents
                 - conceptId
               properties:
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Documents to upload (PDF, DOC, DOCX, TXT)
                 conceptId:
                   type: string
                   format: uuid
                   description: Associated concept ID
-                documentType:
-                  type: string
-                  enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES, OTHER]
-                  default: OTHER
+                documents:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - filename
+                      - content
+                    properties:
+                      filename:
+                        type: string
+                        description: Name of the file
+                      content:
+                        type: string
+                        format: byte
+                        description: Base64 encoded file content
+                      documentType:
+                        type: string
+                        enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES, OTHER]
+                        default: OTHER
                 processingOptions:
                   type: object
                   properties:
@@ -225,8 +296,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-
 
   /api/documents/{conceptId}:
     get:
@@ -298,7 +367,7 @@ paths:
           content:
             application/json:
               schema:
-                                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -626,4 +695,4 @@ tags:
   - name: Chat Interface
     description: Interactive AI chat for concept development
   - name: Document Processing
-    description: Document upload, processing, and RAG integration 
+    description: Document upload, processing, and RAG integration
