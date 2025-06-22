@@ -30,12 +30,34 @@ generate_java() {
 
   # Create output directories
   create_dir "server/src/main/java/generated"
+  create_dir "user-svc/src/main/java/generated"
+  create_dir "concept-svc/src/main/java/generated"
 
   # Generate code for API Gateway
   openapi-generator-cli generate \
     -i api/gateway.yaml \
     -g spring \
     -o server/src/main/java/generated \
+    --skip-validate-spec \
+    --api-package de.tum.aet.devops25.api.generated.controller \
+    --model-package de.tum.aet.devops25.api.generated.model \
+    --additional-properties=useTags=true,useSpringBoot3=true,interfaceOnly=true
+
+  # Generate for user-svc
+  openapi-generator-cli generate \
+    -i api/user-service.yaml \
+    -g spring \
+    -o user-svc/src/main/java/generated \
+    --skip-validate-spec \
+    --api-package de.tum.aet.devops25.api.generated.controller \
+    --model-package de.tum.aet.devops25.api.generated.model \
+    --additional-properties=useTags=true,useSpringBoot3=true,interfaceOnly=true
+
+  # Generate for concept-svc
+  openapi-generator-cli generate \
+    -i api/concept-service.yaml \
+    -g spring \
+    -o concept-svc/src/main/java/generated \
     --skip-validate-spec \
     --api-package de.tum.aet.devops25.api.generated.controller \
     --model-package de.tum.aet.devops25.api.generated.model \

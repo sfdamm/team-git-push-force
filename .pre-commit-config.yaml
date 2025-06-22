@@ -57,7 +57,7 @@ repos:
         language: system
         files: api/.*\.yaml$
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]
 
   # Commit message validation
   - repo: https://github.com/commitizen-tools/commitizen
