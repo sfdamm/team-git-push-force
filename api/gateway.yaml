@@ -28,10 +28,12 @@ servers:
 paths:
   /health:
     get:
+      operationId: getGatewayHealth
       summary: Health check
       description: Check if the API Gateway is running
       tags:
         - Health
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -49,10 +51,12 @@ paths:
 
   /auth/login:
     post:
+      operationId: userLogin
       summary: User login
       description: Authenticate user and return JWT token
       tags:
         - Authentication
+      security: []
       requestBody:
         required: true
         content:
@@ -87,6 +91,7 @@ paths:
 
   /auth/refresh:
     post:
+      operationId: refreshToken
       summary: Refresh JWT token
       description: Refresh an expired JWT token using refresh token
       tags:
@@ -121,6 +126,7 @@ paths:
 
   /auth/logout:
     post:
+      operationId: userLogout
       summary: User logout
       description: Invalidate the current JWT token
       tags:
@@ -138,13 +144,21 @@ paths:
                   message:
                     type: string
                     example: "Logout successful"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/register:
     post:
+      operationId: userRegistration
       summary: User registration
       description: Register a new user account and return JWT token
       tags:
         - Authentication
+      security: []
       requestBody:
         required: true
         content:
@@ -197,6 +211,7 @@ paths:
   # User Service Routes (Proxied)
   /api/users/profile:
     get:
+      operationId: getUserProfile
       summary: Get current user profile and settings
       description: Retrieve the authenticated user's profile and settings
       tags:
@@ -217,6 +232,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
+      operationId: updateUserProfile
       summary: Update user profile and settings
       description: Update the authenticated user's profile and settings
       tags:
@@ -252,6 +268,7 @@ paths:
   # Concept Service Routes (Proxied)
   /api/concepts:
     get:
+      operationId: getConceptsViaGateway
       summary: Get user's concepts
       description: Retrieve all concepts for the authenticated user
       tags:
@@ -290,8 +307,15 @@ paths:
                     type: integer
                   totalPages:
                     type: integer
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     post:
+      operationId: createConceptViaGateway
       summary: Create new concept
       description: Create a new event concept
       tags:
@@ -311,9 +335,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/concepts/{conceptId}:
     get:
+      operationId: getConceptByIdViaGateway
       summary: Get concept by ID
       description: Retrieve a specific concept by its ID
       tags:
@@ -334,6 +371,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Concept'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -342,6 +385,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     put:
+      operationId: updateConceptViaGateway
       summary: Update concept
       description: Update an existing concept with partial or complete data
       tags:
@@ -374,6 +418,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -382,6 +432,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
+      operationId: deleteConceptViaGateway
       summary: Delete concept
       description: Delete a concept (moves to ARCHIVED status)
       tags:
@@ -404,6 +455,12 @@ paths:
       responses:
         '204':
           description: Concept deleted successfully
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -419,6 +476,7 @@ paths:
 
   /api/concepts/{conceptId}/pdf:
     get:
+      operationId: downloadConceptPdfViaGateway
       summary: Download concept as PDF
       description: Generate and download the concept as a PDF file
       tags:
@@ -440,9 +498,22 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/concepts/{conceptId}/apply-suggestion:
     post:
+      operationId: applyConceptSuggestionViaGateway
       summary: Apply AI concept suggestion
       description: Apply a complete concept suggestion from AI chat to the concept
       tags:
@@ -479,14 +550,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # GenAI Service Routes (Proxied)
   /api/genai:
     get:
+      operationId: getGenAIServiceStatus
       summary: GenAI Service status
       description: Standard status page for the GenAI service
       tags:
         - GenAI
+      security: []
       responses:
         '200':
           description: Service status information
@@ -510,10 +601,12 @@ paths:
 
   /api/genai/health:
     get:
+      operationId: getGenAIServiceHealthViaGateway
       summary: GenAI Service health check
       description: Check if the GenAI Service is running
       tags:
         - GenAI
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -551,10 +644,12 @@ paths:
 
   /api/genai/langchain-test:
     get:
+      operationId: testLangChainIntegration
       summary: Test LangChain integration
       description: Test endpoint to demonstrate LangChain integration
       tags:
         - GenAI
+      security: []
       responses:
         '200':
           description: LangChain test result
@@ -572,6 +667,7 @@ paths:
 
   /api/genai/chat/initialize:
     post:
+      operationId: initializeChatForConceptViaGateway
       summary: Initialize chat for new concept
       description: Create personalized welcome message for new concept
       tags:
@@ -616,9 +712,16 @@ paths:
                   conversationId:
                     type: string
                     format: uuid
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/chat:
     post:
+      operationId: chatWithAIAssistantViaGateway
       summary: Chat with AI assistant
       description: Send a message to the AI assistant for concept development
       tags:
@@ -644,6 +747,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
           description: Rate limit exceeded
           content:
@@ -653,6 +762,7 @@ paths:
 
   /api/genai/documents:
     post:
+      operationId: uploadDocumentsForProcessingViaGateway
       summary: Upload documents for processing
       description: Upload documents for the AI to analyze and use in concept generation
       tags:
@@ -692,9 +802,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  /api/genai/documents/{conceptId}:
+  /api/genai/concepts/{conceptId}/documents:
     get:
+      operationId: getDocumentsForConceptViaGateway
       summary: Get documents for concept
       description: Retrieve all documents associated with a concept
       tags:
@@ -729,9 +846,16 @@ paths:
                       $ref: '#/components/schemas/ProcessedDocument'
                   totalCount:
                     type: integer
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/documents/{documentId}:
     delete:
+      operationId: deleteDocumentViaGateway
       summary: Delete document
       description: Delete a document from concept and knowledge base
       tags:
@@ -749,6 +873,12 @@ paths:
       responses:
         '204':
           description: Document deleted successfully
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Document not found
           content:

@@ -26,10 +26,12 @@ servers:
 paths:
   /health:
     get:
+      operationId: getGenAIServiceHealth
       summary: Health check
       description: Check if the GenAI Service is running
       tags:
         - Health
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -67,6 +69,7 @@ paths:
 
   /api/genai/chat/initialize:
     post:
+      operationId: initializeChatForConcept
       summary: Initialize chat for new concept
       description: Create the first welcome message when a user creates a new concept, personalized with user and concept details
       tags:
@@ -119,9 +122,16 @@ paths:
                   conversationId:
                     type: string
                     format: uuid
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/chat:
     post:
+      operationId: chatWithAIAssistant
       summary: Chat with AI assistant
       description: Send a message to the AI assistant for concept development and receive intelligent responses with optional concept suggestions
       tags:
@@ -147,6 +157,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
           description: Rate limit exceeded
           content:
@@ -154,10 +170,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
-
   /api/genai/documents:
     post:
+      operationId: uploadAndProcessDocuments
       summary: Upload and process documents
       description: Upload documents for AI analysis and RAG processing
       tags:
@@ -202,11 +217,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-
-
-  /api/genai/documents/{conceptId}:
+  /api/genai/concepts/{conceptId}/documents:
     get:
+      operationId: getDocumentsForConcept
       summary: Get documents for concept
       description: Retrieve all processed documents associated with a concept
       tags:
@@ -241,9 +261,16 @@ paths:
                       $ref: '#/components/schemas/ProcessedDocument'
                   totalCount:
                     type: integer
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/documents/{documentId}:
     delete:
+      operationId: deleteDocument
       summary: Delete document
       description: Delete a specific document from a concept and remove it from the knowledge base
       tags:
@@ -261,6 +288,12 @@ paths:
       responses:
         '204':
           description: Document deleted successfully
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Document not found
           content:
