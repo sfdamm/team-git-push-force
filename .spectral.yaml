@@ -1,0 +1,64 @@
+extends: ["spectral:oas", "spectral:asyncapi"]
+rules:
+  operation-description:
+    description: Operation must have a description.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )]
+    then:
+      field: description
+      function: truthy
+  
+  operation-tags:
+    description: Operation must have tags.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )]
+    then:
+      field: tags
+      function: truthy
+  
+  operation-summary:
+    description: Operation must have a summary.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )]
+    then:
+      field: summary
+      function: truthy
+  
+  response-description:
+    description: Response must have a description.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )].responses.*
+    then:
+      field: description
+      function: truthy
+  
+  schema-description:
+    description: Schema objects must have a description.
+    severity: warn
+    given: $.components.schemas.*
+    then:
+      field: description
+      function: truthy
+  
+  parameter-description:
+    description: Parameter objects must have a description.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )].parameters[*]
+    then:
+      field: description
+      function: truthy
+  
+  consistent-error-response:
+    description: Error responses must use the ErrorResponse schema.
+    severity: error
+    given: $.paths.*[?( @property === 'get' || @property === 'put' || @property === 'post' || @property === 'delete' || @property === 'options' || @property === 'head' || @property === 'patch' || @property === 'trace' )].responses[?( @property.match(/^[4-5][0-9]{2}$/) )]
+    then:
+      field: content.application/json.schema
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          properties:
+            $ref:
+              type: string
+              pattern: "#/components/schemas/ErrorResponse"

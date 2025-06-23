@@ -378,6 +378,13 @@ sketch
 #
 # Recommended template: Node.gitignore
 
+## OpenAPI Generator ###
+/client/src/api/
+/server/src/main/java/generated/
+/concept-svc/src/main/java/generated/
+/user-svc/src/main/java/generated/
+/genai-svc/client/
+
 ### Infrastructure ###
 # Terraform
 .terraform/
@@ -387,3 +394,4 @@ sketch
 
 # Ansible
 ansible-key.pem
+

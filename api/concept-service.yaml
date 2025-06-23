@@ -25,10 +25,12 @@ servers:
 paths:
   /health:
     get:
+      operationId: getConceptServiceHealth
       summary: Health check
       description: Check if the Concept Service is running
       tags:
         - Health
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -49,6 +51,7 @@ paths:
 
   /api/concepts:
     get:
+      operationId: getUserConcepts
       summary: Get user's concepts
       description: Retrieve all concepts for the authenticated user
       tags:
@@ -87,8 +90,15 @@ paths:
                     type: integer
                   totalPages:
                     type: integer
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     post:
+      operationId: createConcept
       summary: Create new concept
       description: Create a new event concept
       tags:
@@ -114,9 +124,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/concepts/{conceptId}:
     get:
+      operationId: getConceptById
       summary: Get concept by ID
       description: Retrieve a specific concept by its ID
       tags:
@@ -137,6 +154,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Concept'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -151,6 +174,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     put:
+      operationId: updateConcept
       summary: Update concept
       description: Update an existing concept with partial or complete data
       tags:
@@ -183,6 +207,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -197,6 +227,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
+      operationId: deleteConcept
       summary: Delete concept
       description: Delete a concept (moves to ARCHIVED status)
       tags:
@@ -219,6 +250,12 @@ paths:
       responses:
         '204':
           description: Concept deleted successfully
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -234,6 +271,7 @@ paths:
 
   /api/concepts/{conceptId}/pdf:
     get:
+      operationId: downloadConceptPdf
       summary: Download concept as PDF
       description: Generate and download the concept as a PDF file
       tags:
@@ -255,6 +293,12 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Concept not found
           content:
@@ -264,6 +308,7 @@ paths:
 
   /api/concepts/{conceptId}/apply-suggestion:
     post:
+      operationId: applyConceptSuggestion
       summary: Apply AI concept suggestion
       description: Apply a complete concept suggestion from AI chat to the concept
       tags:
@@ -325,6 +370,12 @@ paths:
                 $ref: '#/components/schemas/Concept'
         '400':
           description: Invalid suggestion data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
           content:
             application/json:
               schema:

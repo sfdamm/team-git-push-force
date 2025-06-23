@@ -1,0 +1,15 @@
+{
+  "name": "ai-event-concepter",
+  "version": "1.0.0",
+  "description": "AI Event Concepter - Microservices API",
+  "scripts": {
+    "lint:openapi": "redocly lint api/*.yaml",
+    "docs:openapi": "redocly bundle api/gateway.yaml -o docs/api/gateway.html",
+    "generate:code": "./api/scripts/gen-all.sh"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.0.0-beta.126",
+    "@stoplight/spectral-cli": "^6.11.0"
+  },
+  "private": true
+}

@@ -6,7 +6,7 @@ services:
     ports:
       - "8090:8080"
     volumes:
-      - ./server/src/main/resources/api-gateway-openapi.yaml:/openapi.yaml:ro
+      - ./api/gateway.yaml:/openapi.yaml:ro
     environment:
       SWAGGER_JSON: /openapi.yaml
     networks:
@@ -19,7 +19,7 @@ services:
     ports:
       - "8091:8080"
     volumes:
-      - ./server/src/main/resources/user-service-openapi.yaml:/openapi.yaml:ro
+      - ./api/user-service.yaml:/openapi.yaml:ro
     environment:
       SWAGGER_JSON: /openapi.yaml
     networks:
@@ -32,7 +32,7 @@ services:
     ports:
       - "8092:8080"
     volumes:
-      - ./server/src/main/resources/concept-service-openapi.yaml:/openapi.yaml:ro
+      - ./api/concept-service.yaml:/openapi.yaml:ro
     environment:
       SWAGGER_JSON: /openapi.yaml
     networks:
@@ -45,7 +45,7 @@ services:
     ports:
       - "8093:8080"
     volumes:
-      - ./server/src/main/resources/genai-service-openapi.yaml:/openapi.yaml:ro
+      - ./api/genai-service.yaml:/openapi.yaml:ro
     environment:
       SWAGGER_JSON: /openapi.yaml
     networks:

@@ -24,10 +24,12 @@ servers:
 paths:
   /health:
     get:
+      operationId: getUserServiceHealth
       summary: Health check
       description: Check if the User Service is running
       tags:
         - Health
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -48,10 +50,12 @@ paths:
 
   /api/users/register:
     post:
+      operationId: registerUser
       summary: Register new user
       description: Create a new user account
       tags:
         - User Registration
+      security: []
       requestBody:
         required: true
         content:
@@ -80,6 +84,7 @@ paths:
 
   /api/users/profile:
     get:
+      operationId: getCurrentUserProfile
       summary: Get current user profile
       description: Retrieve the authenticated user's profile
       tags:
@@ -101,6 +106,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     put:
+      operationId: updateCurrentUserProfile
       summary: Update current user profile
       description: Update the authenticated user's profile
       tags:
@@ -122,6 +128,12 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
           content:
             application/json:
               schema:
