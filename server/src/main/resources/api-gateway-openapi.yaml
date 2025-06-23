@@ -12,7 +12,7 @@ info:
   version: 1.0.0
   contact:
     name: AI Event Concepter Team
-    email: support@aieventconcepter.com
+    email: ge56jal@mytum.de
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -20,8 +20,10 @@ info:
 servers:
   - url: http://localhost:8080
     description: Development server (API Gateway)
-  - url: https://api.aieventconcepter.com
-    description: Production server
+  - url:  https://dev-aieventconcepter.student.k8s.aet.cit.tum.de/api
+    description: Staging server (API Gateway)
+  - url: https://aieventconcepter.student.k8s.aet.cit.tum.de/api
+    description: Production server (API Gateway)
 
 paths:
   /health:
@@ -171,21 +173,7 @@ paths:
                   type: string
                   example: "Doe"
                 preferences:
-                  type: object
-                  properties:
-                    preferredEventFormat:
-                      type: string
-                      enum: [PHYSICAL, VIRTUAL, HYBRID]
-                      example: "HYBRID"
-                    industry:
-                      type: string
-                      example: "Technology"
-                    language:
-                      type: string
-                      example: "en"
-                    timezone:
-                      type: string
-                      example: "Europe/Berlin"
+                  $ref: '#/components/schemas/UserPreferences'
       responses:
         '201':
           description: User registered successfully
@@ -207,56 +195,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   # User Service Routes (Proxied)
-    get:
-      summary: Get all users
-      description: Retrieve list of users (Admin only)
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
-        - name: sort
-          in: query
-          schema:
-            type: string
-            default: "createdAt,desc"
-      responses:
-        '200':
-          description: Users retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
-                  totalElements:
-                    type: integer
-                  totalPages:
-                    type: integer
-                  size:
-                    type: integer
-                  number:
-                    type: integer
-        '403':
-          description: Access forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
   /api/users/profile:
     get:
       summary: Get current user profile and settings
@@ -272,6 +210,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update user profile and settings
       description: Update the authenticated user's profile and settings
@@ -292,6 +236,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Concept Service Routes (Proxied)
   /api/concepts:
@@ -380,6 +336,82 @@ paths:
                 $ref: '#/components/schemas/Concept'
         '404':
           description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update concept
+      description: Update an existing concept with partial or complete data
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConceptRequest'
+      responses:
+        '200':
+          description: Concept updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete concept
+      description: Delete a concept (moves to ARCHIVED status)
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: permanent
+          in: query
+          description: Permanently delete (Admin only)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Concept deleted successfully
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
           content:
             application/json:
               schema:
@@ -554,12 +586,19 @@ paths:
               type: object
               required:
                 - conceptId
+                - userId
               properties:
                 conceptId:
                   type: string
                   format: uuid
+                userId:
+                  type: string
+                  format: uuid
+                  description: User ID for personalization
                 conceptTitle:
                   type: string
+                userPreferences:
+                  $ref: '#/components/schemas/UserPreferences'
       responses:
         '200':
           description: Welcome message generated successfully
@@ -599,6 +638,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/documents:
     post:
@@ -625,7 +676,7 @@ paths:
                   format: uuid
       responses:
         '200':
-          description: Documents uploaded and processed successfully
+          description: Documents uploaded and processing started
           content:
             application/json:
               schema:
@@ -635,6 +686,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ProcessedDocument'
+        '400':
+          description: Invalid file format or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/genai/documents/{conceptId}:
     get:
@@ -648,9 +705,16 @@ paths:
         - name: conceptId
           in: path
           required: true
+          description: Concept ID
           schema:
             type: string
             format: uuid
+        - name: status
+          in: query
+          description: Filter by processing status
+          schema:
+            type: string
+            enum: [PROCESSING, COMPLETED, FAILED]
       responses:
         '200':
           description: Documents retrieved successfully
@@ -678,12 +742,25 @@ paths:
         - name: documentId
           in: path
           required: true
+          description: Document ID to delete
           schema:
             type: string
             format: uuid
       responses:
         '204':
           description: Document deleted successfully
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden - not document owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -717,27 +794,26 @@ components:
         id:
           type: string
           format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         email:
           type: string
           format: email
+          example: "john.doe@eventcorp.com"
         firstName:
           type: string
+          example: "John"
         lastName:
           type: string
+          example: "Doe"
         preferences:
-          type: object
-          properties:
-            preferredEventFormat:
-              type: string
-              enum: [PHYSICAL, VIRTUAL, HYBRID]
-            industry:
-              type: string
-            language:
-              type: string
-            timezone:
-              type: string
+          $ref: '#/components/schemas/UserPreferences'
         isActive:
           type: boolean
+          example: true
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -745,27 +821,37 @@ components:
           type: string
           format: date-time
 
+    UserPreferences:
+      type: object
+      properties:
+        preferredEventFormat:
+          type: string
+          enum: [PHYSICAL, VIRTUAL, HYBRID]
+          example: "HYBRID"
+        industry:
+          type: string
+          example: "Technology"
+        language:
+          type: string
+          example: "en"
+        timezone:
+          type: string
+          example: "Europe/Berlin"
+
     UpdateUserRequest:
       type: object
       properties:
         firstName:
           type: string
+          example: "John"
         lastName:
           type: string
+          example: "Doe"
         preferences:
-          type: object
-          properties:
-            preferredEventFormat:
-              type: string
-              enum: [PHYSICAL, VIRTUAL, HYBRID]
-            industry:
-              type: string
-            language:
-              type: string
-            timezone:
-              type: string
+          $ref: '#/components/schemas/UserPreferences'
         isActive:
           type: boolean
+          example: true
 
     Concept:
       type: object
@@ -775,74 +861,37 @@ components:
           format: uuid
         title:
           type: string
+          example: "Tech Innovation Summit 2024"
         description:
           type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
         status:
           type: string
           enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+          example: "IN_PROGRESS"
         eventDetails:
-          type: object
-          properties:
-            theme:
-              type: string
-            format:
-              type: string
-              enum: [PHYSICAL, VIRTUAL, HYBRID]
-            capacity:
-              type: integer
-            duration:
-              type: string
-            targetAudience:
-              type: string
-            startDate:
-              type: string
-              format: date
-            endDate:
-              type: string
-              format: date
+          $ref: '#/components/schemas/EventDetails'
         agenda:
           type: array
           items:
-            type: object
-            properties:
-              time:
-                type: string
-              title:
-                type: string
-              description:
-                type: string
-              type:
-                type: string
-                enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK]
-              duration:
-                type: integer
-                description: Duration in minutes
+            $ref: '#/components/schemas/AgendaItem'
         speakers:
           type: array
           items:
-            type: object
-            properties:
-              name:
-                type: string
-              expertise:
-                type: string
-              suggestedTopic:
-                type: string
+            $ref: '#/components/schemas/Speaker'
         pricing:
-          type: object
-          properties:
-            currency:
-              type: string
-              default: "EUR"
-            earlyBird:
-              type: number
-            regular:
-              type: number
-            vip:
-              type: number
+          $ref: '#/components/schemas/Pricing'
         notes:
           type: string
           description: Additional notes or requirements
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["technology", "innovation", "conference"]
+        version:
+          type: integer
+          example: 1
         createdAt:
           type: string
           format: date-time
@@ -852,6 +901,142 @@ components:
         userId:
           type: string
           format: uuid
+        lastModifiedBy:
+          type: string
+          format: uuid
+
+    UpdateConceptRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        eventDetails:
+          $ref: '#/components/schemas/EventDetails'
+        agenda:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+        notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    EventDetails:
+      type: object
+      properties:
+        theme:
+          type: string
+          example: "Future of AI in Business"
+        format:
+          type: string
+          enum: [PHYSICAL, VIRTUAL, HYBRID]
+          example: "HYBRID"
+        capacity:
+          type: integer
+          example: 500
+        duration:
+          type: string
+          example: "1 day"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        targetAudience:
+          type: string
+          example: "Technology professionals, entrepreneurs, and innovators"
+        objectives:
+          type: array
+          items:
+            type: string
+          example: ["Showcase latest AI innovations", "Network with industry leaders"]
+        location:
+          type: string
+          example: "Munich Convention Center"
+
+    AgendaItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        time:
+          type: string
+          example: "09:00-10:30"
+        title:
+          type: string
+          example: "Opening Keynote: The Future of AI"
+        description:
+          type: string
+        type:
+          type: string
+          enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK, LUNCH]
+        speaker:
+          type: string
+          example: "Dr. Jane Smith"
+        duration:
+          type: integer
+          description: Duration in minutes
+          example: 90
+
+    Speaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Dr. Jane Smith"
+        expertise:
+          type: string
+          example: "Artificial Intelligence and Machine Learning"
+        suggestedTopic:
+          type: string
+          example: "Future of AI in Healthcare"
+        bio:
+          type: string
+        confirmed:
+          type: boolean
+          default: false
+
+    Pricing:
+      type: object
+      properties:
+        currency:
+          type: string
+          example: "EUR"
+          default: "EUR"
+        earlyBird:
+          type: number
+          example: 199.99
+        regular:
+          type: number
+          example: 299.99
+        vip:
+          type: number
+          example: 499.99
+        student:
+          type: number
+          example: 99.99
+        group:
+          type: number
+          description: Price per person for group bookings (5+)
+          example: 249.99
 
     CreateConceptRequest:
       type: object
@@ -875,6 +1060,12 @@ components:
             preferredFormat:
               type: string
               enum: [PHYSICAL, VIRTUAL, HYBRID]
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
             budget:
               type: string
             duration:
@@ -882,6 +1073,10 @@ components:
               example: "1 day"
             theme:
               type: string
+        tags:
+          type: array
+          items:
+            type: string
 
     ChatRequest:
       type: object
@@ -891,7 +1086,7 @@ components:
       properties:
         message:
           type: string
-          example: "Can you suggest some keynote speakers for a tech innovation summit?"
+          example: "Can you suggest some innovative workshop formats for our tech summit?"
         concept:
           type: object
           description: The complete concept object for context
@@ -916,27 +1111,55 @@ components:
               type: array
               items:
                 type: object
+        conversationId:
+          type: string
+          format: uuid
+          description: Conversation thread ID
+        userPreferences:
+          $ref: '#/components/schemas/UserPreferences'
+          description: User preferences to personalize AI responses
         context:
           type: object
           properties:
-            previousInteractions:
+            previousMessages:
               type: array
               items:
-                type: string
+                type: object
+                properties:
+                  role:
+                    type: string
+                    enum: [user, assistant]
+                  content:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+            includeDocuments:
+              type: boolean
+              default: true
+              description: Include document context in response
+            maxTokens:
+              type: integer
+              default: 1000
+              minimum: 100
+              maximum: 4000
 
     ChatResponse:
       type: object
       properties:
         response:
           type: string
+          description: AI assistant response
         suggestions:
           type: array
           items:
             type: string
+          description: Follow-up suggestions
         followUpQuestions:
           type: array
           items:
             type: string
+          description: Recommended questions to ask next
         conceptSuggestion:
           type: object
           description: "Complete concept suggestion that user can accept"
@@ -947,17 +1170,118 @@ components:
               type: string
             eventDetails:
               type: object
+              properties:
+                theme:
+                  type: string
+                format:
+                  type: string
+                  enum: [PHYSICAL, VIRTUAL, HYBRID]
+                capacity:
+                  type: integer
+                duration:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                targetAudience:
+                  type: string
+                objectives:
+                  type: array
+                  items:
+                    type: string
+                location:
+                  type: string
             agenda:
               type: array
               items:
                 type: object
+                properties:
+                  time:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  type:
+                    type: string
+                    enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK, LUNCH]
+                  speaker:
+                    type: string
+                  duration:
+                    type: integer
+            speakers:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  expertise:
+                    type: string
+                  suggestedTopic:
+                    type: string
+                  bio:
+                    type: string
+            pricing:
+              type: object
+              properties:
+                currency:
+                  type: string
+                earlyBird:
+                  type: number
+                regular:
+                  type: number
+                vip:
+                  type: number
+                student:
+                  type: number
+                group:
+                  type: number
+            notes:
+              type: string
             reasoning:
               type: string
             confidence:
               type: number
         conceptUpdates:
           type: object
-          description: "Partial updates to the concept based on the conversation"
+          description: Suggested partial updates to the existing concept
+          properties:
+            suggestions:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  currentValue:
+                    type: string
+                  suggestedValue:
+                    type: string
+                  reasoning:
+                    type: string
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Source'
+          description: Document sources used in response
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence score for the response
+        tokens:
+          type: object
+          properties:
+            prompt:
+              type: integer
+            response:
+              type: integer
+            total:
+              type: integer
 
     ProcessedDocument:
       type: object
@@ -984,20 +1308,65 @@ components:
           type: string
           format: date-time
 
+    DocumentUploadResult:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+        mimeType:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+
+    Source:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        pageNumber:
+          type: integer
+        section:
+          type: string
+        confidence:
+          type: number
+
     ErrorResponse:
       type: object
       properties:
         error:
           type: string
+          example: "VALIDATION_ERROR"
         message:
           type: string
+          example: "Invalid input data provided"
         timestamp:
           type: string
           format: date-time
         path:
           type: string
+          example: "/api/users/profile"
         status:
           type: integer
+          example: 400
+        details:
+          type: array
+          items:
+            type: string
+          example: ["firstName must not be blank"]
+          description: Additional error details when available
 
 tags:
   - name: Health
