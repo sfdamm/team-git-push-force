@@ -769,21 +769,28 @@ paths:
         - GenAI
       security:
         - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: query
+          required: true
+          description: Associated concept ID
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - files
               properties:
                 files:
                   type: array
                   items:
                     type: string
                     format: binary
-                conceptId:
-                  type: string
-                  format: uuid
       responses:
         '200':
           description: Documents uploaded and processing started

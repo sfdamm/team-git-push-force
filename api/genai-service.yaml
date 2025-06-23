@@ -179,6 +179,14 @@ paths:
         - Document Processing
       security:
         - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: query
+          required: true
+          description: Associated concept ID
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -187,7 +195,6 @@ paths:
               type: object
               required:
                 - files
-                - conceptId
               properties:
                 files:
                   type: array
@@ -195,10 +202,6 @@ paths:
                     type: string
                     format: binary
                   description: Documents to upload (PDF, DOC, DOCX, TXT)
-                conceptId:
-                  type: string
-                  format: uuid
-                  description: Associated concept ID
       responses:
         '200':
           description: Documents uploaded and processing started
