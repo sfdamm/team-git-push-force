@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ai-event-concepter
+description: A Helm chart for AI Event Concepter
+type: application
+version: 0.1.0
+appVersion: "0.0.1"

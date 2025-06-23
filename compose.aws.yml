@@ -1,0 +1,71 @@
+services:
+  # Client service (Angular frontend)
+  client:
+    image: ghcr.io/${GITHUB_REPOSITORY}/client:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - frontend-network
+      - backend-network
+    environment:
+      - PUBLIC_API_URL=${PUBLIC_API_URL}
+    restart: unless-stopped
+
+  # API Gateway (Spring Boot)
+  server:
+    image: ghcr.io/${GITHUB_REPOSITORY}/server:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - USER_SERVICE_URL=http://user-svc:8080
+      - CONCEPT_SERVICE_URL=http://concept-svc:8080
+      - GENAI_SERVICE_URL=http://genai-svc:8083
+    depends_on:
+      - user-svc
+      - concept-svc
+      - genai-svc
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  # User Service (Spring Boot)
+  user-svc:
+    image: ghcr.io/${GITHUB_REPOSITORY}/user-svc:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  # Concept Service (Spring Boot)
+  concept-svc:
+    image: ghcr.io/${GITHUB_REPOSITORY}/concept-svc:latest
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  # GenAI Service (Python Flask)
+  genai-svc:
+    image: ghcr.io/${GITHUB_REPOSITORY}/genai-svc:latest
+    ports:
+      - "8083:8083"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge 
