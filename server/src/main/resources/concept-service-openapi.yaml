@@ -1,0 +1,601 @@
+openapi: 3.0.3
+info:
+  title: AI Event Concepter - Concept Service
+  description: |
+    Concept Service for the AI Event Concepter platform. Handles CRUD operations
+    for event concepts, PDF rendering, and concept management.
+    
+    This service manages:
+    - Event concept creation, retrieval, update, and deletion
+    - Concept versioning and status management
+    - PDF generation and export
+    - Integration with GenAI service for AI-enhanced concepts
+  version: 1.0.0
+  contact:
+    name: AI Event Concepter Team
+    email: ge56jal@mytum.de
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8082
+    description: Development server (Concept Service)
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the Concept Service is running
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+                    example: "concept-service"
+
+  /api/concepts:
+    get:
+      summary: Get user's concepts
+      description: Retrieve all concepts for the authenticated user
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+      responses:
+        '200':
+          description: Concepts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Concept'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+
+    post:
+      summary: Create new concept
+      description: Create a new event concept
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConceptRequest'
+      responses:
+        '201':
+          description: Concept created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}:
+    get:
+      summary: Get concept by ID
+      description: Retrieve a specific concept by its ID
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Concept retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update concept
+      description: Update an existing concept with partial or complete data
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConceptRequest'
+      responses:
+        '200':
+          description: Concept updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete concept
+      description: Delete a concept (moves to ARCHIVED status)
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: permanent
+          in: query
+          description: Permanently delete (Admin only)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Concept deleted successfully
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/pdf:
+    get:
+      summary: Download concept as PDF
+      description: Generate and download the concept as a PDF file
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/apply-suggestion:
+    post:
+      summary: Apply AI concept suggestion
+      description: Apply a complete concept suggestion from AI chat to the concept
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - suggestion
+              properties:
+                suggestion:
+                  type: object
+                  description: The complete concept suggestion from AI chat
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    eventDetails:
+                      $ref: '#/components/schemas/EventDetails'
+                    agenda:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/AgendaItem'
+                    speakers:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Speaker'
+                    pricing:
+                      $ref: '#/components/schemas/Pricing'
+                    notes:
+                      type: string
+                applyMode:
+                  type: string
+                  enum: [REPLACE, MERGE]
+                  default: MERGE
+                  description: Whether to replace the entire concept or merge with existing data
+                reasoning:
+                  type: string
+                  description: Explanation from AI about why this suggestion was made
+      responses:
+        '200':
+          description: Concept suggestion applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Concept'
+        '400':
+          description: Invalid suggestion data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Concept:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Tech Innovation Summit 2024"
+        description:
+          type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+          example: "IN_PROGRESS"
+        eventDetails:
+          $ref: '#/components/schemas/EventDetails'
+        agenda:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+        notes:
+          type: string
+          description: Additional notes or requirements
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["technology", "innovation", "conference"]
+        version:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+          format: uuid
+        lastModifiedBy:
+          type: string
+          format: uuid
+
+    CreateConceptRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: "Tech Innovation Summit 2024"
+        description:
+          type: string
+          example: "A cutting-edge conference exploring the latest in AI and technology"
+        initialRequirements:
+          type: object
+          properties:
+            targetAudience:
+              type: string
+            expectedCapacity:
+              type: integer
+            preferredFormat:
+              type: string
+              enum: [PHYSICAL, VIRTUAL, HYBRID]
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            budget:
+              type: string
+            duration:
+              type: string
+              example: "1 day"
+            theme:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateConceptRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
+        eventDetails:
+          $ref: '#/components/schemas/EventDetails'
+        agenda:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        pricing:
+          $ref: '#/components/schemas/Pricing'
+        notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    EventDetails:
+      type: object
+      properties:
+        theme:
+          type: string
+          example: "Future of AI in Business"
+        format:
+          type: string
+          enum: [PHYSICAL, VIRTUAL, HYBRID]
+          example: "HYBRID"
+        capacity:
+          type: integer
+          example: 500
+        duration:
+          type: string
+          example: "1 day"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        targetAudience:
+          type: string
+          example: "Technology professionals, entrepreneurs, and innovators"
+        objectives:
+          type: array
+          items:
+            type: string
+          example: ["Showcase latest AI innovations", "Network with industry leaders"]
+        location:
+          type: string
+          example: "Munich Convention Center"
+
+    AgendaItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        time:
+          type: string
+          example: "09:00-10:30"
+        title:
+          type: string
+          example: "Opening Keynote: The Future of AI"
+        description:
+          type: string
+        type:
+          type: string
+          enum: [KEYNOTE, WORKSHOP, PANEL, NETWORKING, BREAK, LUNCH]
+        speaker:
+          type: string
+          example: "Dr. Jane Smith"
+        duration:
+          type: integer
+          description: Duration in minutes
+          example: 90
+
+    Speaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Dr. Jane Smith"
+        expertise:
+          type: string
+          example: "Artificial Intelligence and Machine Learning"
+        suggestedTopic:
+          type: string
+          example: "Future of AI in Healthcare"
+        bio:
+          type: string
+        confirmed:
+          type: boolean
+          default: false
+
+    Pricing:
+      type: object
+      properties:
+        currency:
+          type: string
+          example: "EUR"
+          default: "EUR"
+        earlyBird:
+          type: number
+          example: 199.99
+        regular:
+          type: number
+          example: 299.99
+        vip:
+          type: number
+          example: 499.99
+        student:
+          type: number
+          example: 99.99
+        group:
+          type: number
+          description: Price per person for group bookings (5+)
+          example: 249.99
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input data provided"
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: "/api/users/profile"
+        status:
+          type: integer
+          example: 400
+        details:
+          type: array
+          items:
+            type: string
+          example: ["firstName must not be blank"]
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Concepts
+    description: Event concept management 

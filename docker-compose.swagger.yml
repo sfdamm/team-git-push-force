@@ -1,0 +1,68 @@
+services:
+  # API Gateway Documentation
+  swagger-api-gateway:
+    image: swaggerapi/swagger-ui:v5.10.3
+    container_name: swagger-api-gateway
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./server/src/main/resources/api-gateway-openapi.yaml:/openapi.yaml:ro
+    environment:
+      SWAGGER_JSON: /openapi.yaml
+    networks:
+      - swagger-network
+
+  # User Service Documentation
+  swagger-user-service:
+    image: swaggerapi/swagger-ui:v5.10.3
+    container_name: swagger-user-service
+    ports:
+      - "8091:8080"
+    volumes:
+      - ./server/src/main/resources/user-service-openapi.yaml:/openapi.yaml:ro
+    environment:
+      SWAGGER_JSON: /openapi.yaml
+    networks:
+      - swagger-network
+
+  # Concept Service Documentation
+  swagger-concept-service:
+    image: swaggerapi/swagger-ui:v5.10.3
+    container_name: swagger-concept-service
+    ports:
+      - "8092:8080"
+    volumes:
+      - ./server/src/main/resources/concept-service-openapi.yaml:/openapi.yaml:ro
+    environment:
+      SWAGGER_JSON: /openapi.yaml
+    networks:
+      - swagger-network
+
+  # GenAI Service Documentation
+  swagger-genai-service:
+    image: swaggerapi/swagger-ui:v5.10.3
+    container_name: swagger-genai-service
+    ports:
+      - "8093:8080"
+    volumes:
+      - ./server/src/main/resources/genai-service-openapi.yaml:/openapi.yaml:ro
+    environment:
+      SWAGGER_JSON: /openapi.yaml
+    networks:
+      - swagger-network
+
+  # Documentation Hub (serves links to all services)
+  docs-hub:
+    image: nginx:alpine
+    container_name: docs-hub
+    ports:
+      - "8094:80"
+    volumes:
+      - ./docs/index.html:/usr/share/nginx/html/index.html
+      - ./docs/styles.css:/usr/share/nginx/html/styles.css
+    networks:
+      - swagger-network
+
+networks:
+  swagger-network:
+    driver: bridge 
