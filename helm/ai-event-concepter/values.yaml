@@ -1,0 +1,86 @@
+# Default values for ai-event-concepter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace:
+  create: false
+
+server:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/server
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  replicaCount: 1
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: docker
+    - name: USER_SERVICE_URL
+      value: http://user-service:8080
+    - name: CONCEPT_SERVICE_URL
+      value: http://concept-service:8080
+    - name: GENAI_SERVICE_URL
+      value: http://genai-service:8083
+
+client:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/client
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  replicaCount: 1
+
+usersvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/user-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  replicaCount: 1
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: docker
+
+conceptsvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/concept-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  replicaCount: 1
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: docker
+
+genaisvc:
+  image:
+    repository: ghcr.io/aet-devops25/team-git-push-force/genai-svc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+  replicaCount: 1
+  env:
+    - name: FLASK_ENV
+      value: production
+
+ingress:
+  enabled: true
+  className: "nginx"
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"

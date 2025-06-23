@@ -1,0 +1,14 @@
+all:
+  hosts:
+    app_server:
+      ansible_host: "3.210.103.15" # TODO: change to the actual IP address. needs to be dynamic.
+      ansible_user: ubuntu
+      ansible_ssh_private_key_file: "ansible-key.pem" # TODO: need to be dynamic according to the terraform output.
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  vars:
+    project_name: concepter-academy
+    app_environment: testing
+    docker_registry: ghcr.io
+    github_repository: your-username/concepter
+    github_actor: your-username
+    github_token: your-token 

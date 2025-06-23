@@ -384,3 +384,14 @@ sketch
 /concept-svc/src/main/java/generated/
 /user-svc/src/main/java/generated/
 /genai-svc/client/
+
+### Infrastructure ###
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+
+# Ansible
+ansible-key.pem
+
