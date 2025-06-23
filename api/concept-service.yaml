@@ -4,17 +4,16 @@ info:
   description: |
     Concept Service for the AI Event Concepter platform. Handles CRUD operations
     for event concepts, PDF rendering, and concept management.
-
+    
     This service manages:
     - Event concept creation, retrieval, update, and deletion
     - Concept versioning and status management
     - PDF generation and export
-    - Concept templates and cloning
     - Integration with GenAI service for AI-enhanced concepts
   version: 1.0.0
   contact:
     name: AI Event Concepter Team
-    email: support@aieventconcepter.com
+    email: ge56jal@mytum.de
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -22,11 +21,6 @@ info:
 servers:
   - url: http://localhost:8082
     description: Development server (Concept Service)
-  - url: https://concepts.aieventconcepter.com
-    description: Production server
-
-security:
-  - bearerAuth: []
 
 paths:
   /health:
@@ -56,57 +50,27 @@ paths:
   /api/concepts:
     get:
       summary: Get user's concepts
-      description: Retrieve paginated list of concepts for the authenticated user
+      description: Retrieve all concepts for the authenticated user
       tags:
-        - Concept Management
+        - Concepts
       security:
         - bearerAuth: []
       parameters:
         - name: page
           in: query
-          description: Page number (0-based)
           schema:
             type: integer
             default: 0
-            minimum: 0
         - name: size
           in: query
-          description: Number of items per page
           schema:
             type: integer
             default: 20
-            minimum: 1
-            maximum: 100
-        - name: sort
-          in: query
-          description: Sort criteria (field,direction)
-          schema:
-            type: string
-            default: "updatedAt,desc"
-            example: "title,asc"
         - name: status
           in: query
-          description: Filter by concept status
           schema:
             type: string
             enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
-        - name: search
-          in: query
-          description: Search term for filtering concepts
-          schema:
-            type: string
-        - name: format
-          in: query
-          description: Filter by event format
-          schema:
-            type: string
-            enum: [PHYSICAL, VIRTUAL, HYBRID]
-        - name: tags
-          in: query
-          description: Filter by tags (comma-separated)
-          schema:
-            type: string
-            example: "technology,innovation,conference"
       responses:
         '200':
           description: Concepts retrieved successfully
@@ -118,29 +82,17 @@ paths:
                   content:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ConceptSummary'
-                  pageable:
-                    $ref: '#/components/schemas/Pageable'
+                      $ref: '#/components/schemas/Concept'
                   totalElements:
                     type: integer
                   totalPages:
                     type: integer
-                  last:
-                    type: boolean
-                  size:
-                    type: integer
-                  number:
-                    type: integer
-                  first:
-                    type: boolean
-                  empty:
-                    type: boolean
 
     post:
       summary: Create new concept
       description: Create a new event concept
       tags:
-        - Concept Management
+        - Concepts
       security:
         - bearerAuth: []
       requestBody:
@@ -168,23 +120,16 @@ paths:
       summary: Get concept by ID
       description: Retrieve a specific concept by its ID
       tags:
-        - Concept Management
+        - Concepts
       security:
         - bearerAuth: []
       parameters:
         - name: conceptId
           in: path
           required: true
-          description: Concept ID
           schema:
             type: string
             format: uuid
-        - name: includeHistory
-          in: query
-          description: Include concept history/versions
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: Concept retrieved successfully
@@ -209,14 +154,13 @@ paths:
       summary: Update concept
       description: Update an existing concept with partial or complete data
       tags:
-        - Concept Management
+        - Concepts
       security:
         - bearerAuth: []
       parameters:
         - name: conceptId
           in: path
           required: true
-          description: Concept ID
           schema:
             type: string
             format: uuid
@@ -252,19 +196,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/concepts/{conceptId}/apply-suggestion:
-    post:
-      summary: Apply AI concept suggestion
-      description: Apply a complete concept suggestion received from the AI chat interface
+    delete:
+      summary: Delete concept
+      description: Delete a concept (moves to ARCHIVED status)
       tags:
-        - Concept Management
+        - Concepts
       security:
         - bearerAuth: []
       parameters:
         - name: conceptId
           in: path
           required: true
-          description: Concept ID
+          schema:
+            type: string
+            format: uuid
+        - name: permanent
+          in: query
+          description: Permanently delete (Admin only)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Concept deleted successfully
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/pdf:
+    get:
+      summary: Download concept as PDF
+      description: Generate and download the concept as a PDF file
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Concept not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/concepts/{conceptId}/apply-suggestion:
+    post:
+      summary: Apply AI concept suggestion
+      description: Apply a complete concept suggestion from AI chat to the concept
+      tags:
+        - Concepts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conceptId
+          in: path
+          required: true
           schema:
             type: string
             format: uuid
@@ -313,119 +322,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  concept:
-                    $ref: '#/components/schemas/Concept'
-                  appliedChanges:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        field:
-                          type: string
-                        oldValue:
-                          type: string
-                        newValue:
-                          type: string
-                        action:
-                          type: string
-                          enum: [ADDED, UPDATED, REPLACED]
+                $ref: '#/components/schemas/Concept'
         '400':
           description: Invalid suggestion data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Concept not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      summary: Delete concept
-      description: Delete a concept (moves to ARCHIVED status)
-      tags:
-        - Concept Management
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-        - name: permanent
-          in: query
-          description: Permanently delete (Admin only)
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '204':
-          description: Concept deleted successfully
-        '404':
-          description: Concept not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Access forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-
-
-  /api/concepts/{conceptId}/pdf:
-    get:
-      summary: Generate concept PDF
-      description: Generate and download the concept as a PDF file
-      tags:
-        - PDF Export
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: conceptId
-          in: path
-          required: true
-          description: Concept ID
-          schema:
-            type: string
-            format: uuid
-        - name: template
-          in: query
-          description: PDF template to use
-          schema:
-            type: string
-            enum: [STANDARD, EXECUTIVE, DETAILED, PITCH]
-            default: STANDARD
-        - name: includeAppendix
-          in: query
-          description: Include appendix with additional details
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '200':
-          description: PDF generated successfully
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-          headers:
-            Content-Disposition:
-              description: Suggested filename for download
-              schema:
-                type: string
-                example: 'attachment; filename="concept-tech-summit-2024.pdf"'
         '404':
           description: Concept not found
           content:
@@ -494,42 +397,6 @@ components:
           type: string
           format: uuid
 
-    ConceptSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-          maxLength: 200
-        status:
-          type: string
-          enum: [DRAFT, IN_PROGRESS, COMPLETED, ARCHIVED]
-        eventFormat:
-          type: string
-          enum: [PHYSICAL, VIRTUAL, HYBRID]
-        expectedAttendees:
-          type: integer
-        startDate:
-          type: string
-          format: date
-        endDate:
-          type: string
-          format: date
-        tags:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
     CreateConceptRequest:
       type: object
       required:
@@ -542,10 +409,6 @@ components:
         description:
           type: string
           example: "A cutting-edge conference exploring the latest in AI and technology"
-        templateId:
-          type: string
-          format: uuid
-          description: Optional template to base concept on
         initialRequirements:
           type: object
           properties:
@@ -707,22 +570,6 @@ components:
           description: Price per person for group bookings (5+)
           example: 249.99
 
-    Pageable:
-      type: object
-      properties:
-        sort:
-          type: object
-        offset:
-          type: integer
-        pageSize:
-          type: integer
-        pageNumber:
-          type: integer
-        paged:
-          type: boolean
-        unpaged:
-          type: boolean
-
     ErrorResponse:
       type: object
       properties:
@@ -731,25 +578,24 @@ components:
           example: "VALIDATION_ERROR"
         message:
           type: string
-          example: "Invalid input data"
-        details:
-          type: array
-          items:
-            type: string
+          example: "Invalid input data provided"
         timestamp:
           type: string
           format: date-time
         path:
           type: string
-          example: "/api/concepts"
+          example: "/api/users/profile"
         status:
           type: integer
           example: 400
+        details:
+          type: array
+          items:
+            type: string
+          example: ["firstName must not be blank"]
 
 tags:
   - name: Health
     description: Health check endpoints
-  - name: Concept Management
-    description: CRUD operations for event concepts
-  - name: PDF Export
-    description: PDF generation and export 
+  - name: Concepts
+    description: Event concept management 
