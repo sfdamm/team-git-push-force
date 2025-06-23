@@ -1,0 +1,153 @@
+---
+- name: Deploy Concepter Application with Full System Setup
+  hosts: app_server
+  become: yes
+  vars:
+    app_dir: "/home/ubuntu/app"
+    docker_registry: ghcr.io
+    docker_compose_version: "2.24.0"
+    
+  tasks:
+    - name: Wait for system to become reachable
+      wait_for_connection:
+        timeout: 300
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - unzip
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Install Docker Compose standalone
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create docker-compose symlink
+      file:
+        src: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
+        state: link
+
+    - name: Reset SSH connection to apply group changes
+      meta: reset_connection
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy Docker Compose file
+      copy:
+        src: ../compose.aws.yml
+        dest: "{{ app_dir }}/compose.aws.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Create environment file
+      template:
+        src: env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Log into Docker registry
+      become_user: ubuntu
+      docker_login:
+        registry: "{{ docker_registry }}"
+        username: "{{ github_actor }}"
+        password: "{{ github_token }}"
+
+    - name: Stop existing containers
+      become_user: ubuntu
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        files:
+          - compose.aws.yml
+        state: absent
+        remove_orphans: yes
+      ignore_errors: yes
+
+    - name: Start application services
+      become_user: ubuntu
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        files:
+          - compose.aws.yml
+        pull: yes
+        state: present
+        recreate: always
+
+    - name: Wait for application to be ready
+      wait_for:
+        port: 3000
+        host: "{{ ansible_host }}"
+        delay: 30
+        timeout: 300
+
+    - name: Verify application health
+      uri:
+        url: "http://{{ ansible_host }}:3000"
+        method: GET
+        status_code: 200
+      retries: 5
+      delay: 10
+
+    - name: Create health check script
+      copy:
+        content: |
+          #!/bin/bash
+          curl -f http://localhost:3000 || exit 1
+        dest: /home/ubuntu/health-check.sh
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755' 

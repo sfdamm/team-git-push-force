@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: ai-event-concepter-user-svc-selector
+  ports:
+    - port: {{ .Values.usersvc.service.port }}
+      targetPort: {{ .Values.usersvc.service.targetPort }}
+      protocol: TCP
+  type: {{ .Values.usersvc.service.type }}
