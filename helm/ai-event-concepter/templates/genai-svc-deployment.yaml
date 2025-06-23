@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-event-concepter-genai-svc
+spec:
+  replicas: {{ .Values.genaisvc.replicaCount }}
+  selector:
+    matchLabels:
+      app: ai-event-concepter-genai-svc-selector
+  template:
+    metadata:
+      labels:
+        app: ai-event-concepter-genai-svc-selector
+    spec:
+      imagePullSecrets:
+        - name: ghcr
+      containers:
+        - name: genai-svc
+          image: "{{ .Values.genaisvc.image.repository }}:{{ .Values.genaisvc.image.tag }}"
+          imagePullPolicy: {{ .Values.genaisvc.image.pullPolicy }}
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          ports:
+            - containerPort: {{ .Values.genaisvc.service.targetPort }}
+          env:
+            {{- range .Values.genaisvc.env }}
+            - name: {{ .name }}
+              value: "{{ .value }}"
+            {{- end }}

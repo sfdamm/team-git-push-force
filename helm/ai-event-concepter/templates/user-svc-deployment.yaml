@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-event-concepter-user-svc
+spec:
+  replicas: {{ .Values.usersvc.replicaCount }}
+  selector:
+    matchLabels:
+      app: ai-event-concepter-user-svc-selector
+  template:
+    metadata:
+      labels:
+        app: ai-event-concepter-user-svc-selector
+    spec:
+      imagePullSecrets:
+        - name: ghcr
+      containers:
+        - name: user-svc
+          image: "{{ .Values.usersvc.image.repository }}:{{ .Values.usersvc.image.tag }}"
+          imagePullPolicy: {{ .Values.usersvc.image.pullPolicy }}
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          ports:
+            - containerPort: {{ .Values.usersvc.service.targetPort }}
+          env:
+            {{- range .Values.usersvc.env }}
+            - name: {{ .name }}
+              value: "{{ .value }}"
+            {{- end }}
