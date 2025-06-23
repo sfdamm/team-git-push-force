@@ -14,16 +14,14 @@ info:
   version: 1.0.0
   contact:
     name: AI Event Concepter Team
-    email: support@aieventconcepter.com
+    email: ge56jal@mytum.de
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:5000
+  - url: http://localhost:8083
     description: Development server (GenAI Service)
-  - url: https://genai.aieventconcepter.com
-    description: Production server
 
 paths:
   /health:
@@ -67,7 +65,7 @@ paths:
                       collections:
                         type: integer
 
-  /api/chat/initialize:
+  /api/genai/chat/initialize:
     post:
       summary: Initialize chat for new concept
       description: Create the first welcome message when a user creates a new concept, personalized with user and concept details
@@ -96,9 +94,6 @@ paths:
                 conceptTitle:
                   type: string
                   example: "Tech Innovation Summit 2024"
-                userName:
-                  type: string
-                  example: "John Doe"
                 userPreferences:
                   $ref: '#/components/schemas/UserPreferences'
       responses:
@@ -125,7 +120,7 @@ paths:
                     type: string
                     format: uuid
 
-  /api/chat:
+  /api/genai/chat:
     post:
       summary: Chat with AI assistant
       description: Send a message to the AI assistant for concept development and receive intelligent responses with optional concept suggestions
@@ -161,7 +156,7 @@ paths:
 
 
 
-  /api/documents:
+  /api/genai/documents:
     post:
       summary: Upload and process documents
       description: Upload documents for AI analysis and RAG processing
@@ -189,16 +184,6 @@ paths:
                   type: string
                   format: uuid
                   description: Associated concept ID
-                documentType:
-                  type: string
-                  enum: [INDUSTRY_REPORT, BRAND_DECK, PAST_EVENT_DEBRIEF, GUIDELINES, OTHER]
-                  default: OTHER
-                processingOptions:
-                  type: object
-                  properties:
-                    extractImages:
-                      type: boolean
-                      default: false
       responses:
         '200':
           description: Documents uploaded and processing started
@@ -207,15 +192,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  uploadedDocuments:
+                  processedDocuments:
                     type: array
                     items:
-                      $ref: '#/components/schemas/DocumentUploadResult'
-                  processingJobs:
-                    type: array
-                    items:
-                      type: string
-                      format: uuid
+                      $ref: '#/components/schemas/ProcessedDocument'
         '400':
           description: Invalid file format or request
           content:
@@ -225,7 +205,7 @@ paths:
 
 
 
-  /api/documents/{conceptId}:
+  /api/genai/documents/{conceptId}:
     get:
       summary: Get documents for concept
       description: Retrieve all processed documents associated with a concept
@@ -261,11 +241,8 @@ paths:
                       $ref: '#/components/schemas/ProcessedDocument'
                   totalCount:
                     type: integer
-                  totalSize:
-                    type: integer
-                    description: Total size of all documents in bytes
 
-  /api/documents/{documentId}:
+  /api/genai/documents/{documentId}:
     delete:
       summary: Delete document
       description: Delete a specific document from a concept and remove it from the knowledge base
@@ -295,7 +272,7 @@ paths:
           content:
             application/json:
               schema:
-                                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -338,10 +315,7 @@ components:
               type: array
               items:
                 type: object
-            sponsors:
-              type: array
-              items:
-                type: object
+
         conversationId:
           type: string
           format: uuid
@@ -514,26 +488,6 @@ components:
             total:
               type: integer
 
-    DocumentUploadResult:
-      type: object
-      properties:
-        documentId:
-          type: string
-          format: uuid
-        filename:
-          type: string
-        size:
-          type: integer
-          description: File size in bytes
-        mimeType:
-          type: string
-        uploadedAt:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
-
     ProcessedDocument:
       type: object
       properties:
@@ -558,9 +512,6 @@ components:
         processedAt:
           type: string
           format: date-time
-        conceptId:
-          type: string
-          format: uuid
 
     Source:
       type: object
@@ -602,20 +553,21 @@ components:
           example: "VALIDATION_ERROR"
         message:
           type: string
-          example: "Invalid input data"
-        details:
-          type: array
-          items:
-            type: string
+          example: "Invalid input data provided"
         timestamp:
           type: string
           format: date-time
         path:
           type: string
-          example: "/api/chat"
+          example: "/api/users/profile"
         status:
           type: integer
           example: 400
+        details:
+          type: array
+          items:
+            type: string
+          example: ["firstName must not be blank"]
 
 tags:
   - name: Health
